@@ -21,16 +21,23 @@
 }
 
 .logo{
-  width:44px;
-  height:44px;
-  border-radius:14px;
-  background:var(--primary-soft);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:22px;
-  border:1px solid #cde8c6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--primary-soft);
+  border: 1px solid #cde8c6;
+  border-radius: 14px;
+
+  padding: 14px 18px;   /* espace autour du logo */
 }
+
+.logo img{
+  height: 56px;         /* taille réelle du logo */
+  width: auto;          /* garde les proportions */
+  display: block;
+}
+
 
 .sub{
   color:var(--muted);
