@@ -102,3 +102,8 @@ select:focus{
   border-radius:var(--radius-sm);
   background:#fff;
 }
+.summaryItem{
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+#pdfArea{ padding: 6px; }

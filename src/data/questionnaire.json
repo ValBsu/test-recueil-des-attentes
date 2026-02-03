@@ -8,7 +8,8 @@
       "choices": [
         { "value": "seul", "label": "Je réponds seul(e)" },
         { "value": "famille", "label": "Je réponds avec ma famille" },
-        { "value": "pro", "label": "Je réponds avec un professionnel" }
+        { "value": "pro", "label": "Je réponds avec un professionnel" },
+        { "value": "el mustache", "label": "Je réponds avec El Mustache" }
       ]
     },
     {
@@ -43,6 +44,36 @@
             { "value" : "jeux_video", "label" : "Les jeux vidéo" },
             { "value" : "art", "label" : "L'art / le dessin" }
         ]
-    }
+    },
+    {
+      "id": "q5",
+      "title": "Manges-tu bien au self ?",
+      "type": "multiple",
+      "choices": [
+        { "value": "oui", "label": "Restoria c'est du gastro" },
+        { "value": "mcdo", "label": "On peut avoir un Mcdo ?" },
+        { "value": "Non", "label": "Ma mère cuisine mieux" }
+      ]
+    },
+    {
+      "id": "q6",
+      "title": "As-tu des projets pour l’avenir ?",
+      "type": "single",
+      "choices": [
+        { "value": "oui", "label": "Oui" },
+        { "value": "non", "label": "Non" }
+      ]
+    },  
+    {
+      "id": "q7",
+      "title": "Où te vois tu dans 5 ans ?",
+      "type": "multiple",
+      "choices": [
+        { "value": "travail", "label": "En ESAT" },
+        { "value": "console", "label": "Devans ma console" },
+        { "value": "non", "label": "Je ne sais pas" },
+        { "value": "famille", "label": "Chez ma mère" } 
+      ]
+    } 
   ]
 }
