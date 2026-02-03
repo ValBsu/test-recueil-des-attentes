@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recueil des attentes</title>
+
+  <link rel="stylesheet" href="./src/styles/base.css" />
+  <link rel="stylesheet" href="./src/styles/layout.css" />
+  <link rel="stylesheet" href="./src/styles/components.css" />
+  <link rel="stylesheet" href="./src/styles/accessibility.css" />
+</head>
+
+<body>
+  <a class="skip" href="#main">Aller au contenu</a>
+
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">🧩</div>
+        <div>
+          <h1>Recueil des attentes</h1>
+          <p class="sub">Questionnaire accessible – pictogrammes & audio</p>
+        </div>
+      </div>
+
+      <span class="badge">
+        👤 Éducateur : <strong id="educBadge">à choisir</strong>
+      </span>
+    </div>
+  </header>
+
+  <main id="main" class="main" tabindex="-1">
+    <section class="card">
+      <h2>Démarrer le questionnaire</h2>
+
+      <div class="field">
+        <label for="educSelect">Choisis ton éducateur référent</label>
+        <select id="educSelect" aria-describedby="educHelp">
+          <option value="">— Sélectionner —</option>
+          <option value="valentin">Valentin</option>
+          <option value="alexis">Alexis</option>
+          <option value="matthieu">Matthieu</option>
+        </select>
+        <p id="educHelp" class="help">
+          Cette information permet d’envoyer le questionnaire au bon professionnel.
+        </p>
+      </div>
+
+      <button class="btn" type="button" id="startBtn">
+        Continuer
+      </button>
+
+      <p id="out" class="out" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script src="./src/js/app.js"></script>
+</body>
+</html>

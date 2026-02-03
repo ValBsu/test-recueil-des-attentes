@@ -1,0 +1,193 @@
+alert("JS chargé ✅");
+const select = document.getElementById("educSelect");
+const badge = document.getElementById("educBadge");
+const btn = document.getElementById("startBtn");
+const out = document.getElementById("out");
+
+let questionnaire = null;
+let qIndex = 0;
+let answers = {}; // { q1: "seul", q2: "autonomie", ... }
+
+// UI elements (créés dynamiquement)
+let quizBox = null;
+
+function updateBadge(){
+  const label = select.options[select.selectedIndex]?.textContent;
+  badge.textContent = label && label !== "— Sélectionner —" ? label : "à choisir";
+}
+
+select.addEventListener("change", updateBadge);
+updateBadge();
+
+async function loadQuestionnaire(){
+  const res = await fetch("./src/data/questionnaire.json", { cache: "no-store" });
+  questionnaire = await res.json();
+}
+
+function getCurrentQuestion(){
+  return questionnaire.questions[qIndex];
+}
+
+function ensureQuizBox(){
+  if(quizBox) return;
+
+  // On remplace la carte de départ par une carte questionnaire
+  const card = document.querySelector(".card");
+  card.innerHTML = `
+    <h2 id="qTitle"></h2>
+    <div id="choices" class="choices"></div>
+
+    <div class="navRow">
+      <button class="btn secondary" id="prevBtn" type="button">← Précédent</button>
+      <button class="btn" id="nextBtn" type="button">Suivant →</button>
+    </div>
+
+    <p id="hint" class="out" aria-live="polite"></p>
+  `;
+
+  quizBox = {
+    card,
+    title: document.getElementById("qTitle"),
+    choices: document.getElementById("choices"),
+    prev: document.getElementById("prevBtn"),
+    next: document.getElementById("nextBtn"),
+    hint: document.getElementById("hint")
+  };
+
+  quizBox.prev.addEventListener("click", () => {
+    qIndex = Math.max(0, qIndex - 1);
+    renderQuestion();
+  });
+
+  quizBox.next.addEventListener("click", () => {
+    const q = getCurrentQuestion();
+    if(!answers[q.id]){
+      quizBox.hint.textContent = "Choisis une réponse pour continuer.";
+      return;
+    }
+    quizBox.hint.textContent = "";
+
+    const last = qIndex === questionnaire.questions.length - 1;
+    if(last){
+      renderSummary();
+    }else{
+      qIndex++;
+      renderQuestion();
+    }
+  });
+}
+
+function renderQuestion(){
+  const q = getCurrentQuestion();
+  quizBox.title.textContent = q.title;
+
+  quizBox.choices.innerHTML = "";
+  const selected = answers[q.id] || "";
+
+  q.choices.forEach((c, i) => {
+    const id = `${q.id}_${i}`;
+
+    const row = document.createElement("div");
+    row.className = "choiceRow";
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = q.id;
+    input.id = id;
+    input.value = c.value;
+    input.checked = (c.value === selected);
+
+    input.addEventListener("change", () => {
+      answers[q.id] = c.value;
+    });
+
+    const label = document.createElement("label");
+    label.setAttribute("for", id);
+    label.textContent = c.label;
+
+    row.appendChild(input);
+    row.appendChild(label);
+    quizBox.choices.appendChild(row);
+  });
+
+  quizBox.prev.disabled = (qIndex === 0);
+  quizBox.next.textContent = (qIndex === questionnaire.questions.length - 1) ? "Terminer →" : "Suivant →";
+}
+
+function renderSummary(){
+  const educLabel = badge.textContent;
+
+  const summary = questionnaire.questions.map(q => {
+    const val = answers[q.id];
+    const label = q.choices.find(c => c.value === val)?.label || "";
+    return { question: q.title, answer: label };
+  });
+
+  quizBox.card.innerHTML = `
+    <h2>Récapitulatif</h2>
+    <p class="out"><strong>Éducateur :</strong> ${escapeHtml(educLabel)}</p>
+
+    <div class="summaryList" id="summaryList"></div>
+
+    <div class="navRow">
+      <button class="btn secondary" id="editBtn" type="button">← Modifier</button>
+      <button class="btn" id="downloadBtn" type="button">⬇️ Télécharger</button>
+    </div>
+
+    <p class="out">Pour l’instant, tu peux envoyer le fichier à ton éducateur (mail, WhatsApp, etc.).</p>
+  `;
+
+  const list = document.getElementById("summaryList");
+  summary.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "summaryItem";
+    div.innerHTML = `<strong>${escapeHtml(item.question)}</strong><div>${escapeHtml(item.answer)}</div>`;
+    list.appendChild(div);
+  });
+
+  document.getElementById("editBtn").addEventListener("click", () => {
+    // Recrée la carte questionnaire
+    quizBox = null;
+    ensureQuizBox();
+    renderQuestion();
+  });
+
+  document.getElementById("downloadBtn").addEventListener("click", () => {
+    downloadJSON(educLabel);
+  });
+}
+
+function downloadJSON(educLabel){
+  const payload = {
+    createdAt: new Date().toISOString(),
+    educator: educLabel,
+    answers
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `recueil_${educLabel}_${new Date().toISOString().slice(0,10)}.json`.replaceAll(" ", "_");
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+btn.addEventListener("click", async () => {
+  if(!select.value){
+    out.textContent = "Merci de choisir ton éducateur avant de continuer.";
+    return;
+  }
+  out.textContent = "";
+
+  await loadQuestionnaire();
+  ensureQuizBox();
+  renderQuestion();
+});

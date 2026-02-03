@@ -1,0 +1,48 @@
+{
+  "title": "Recueil des attentes",
+  "questions": [
+    {
+      "id": "q1",
+      "title": "Avec qui fais-tu ce questionnaire ?",
+      "type": "single",
+      "choices": [
+        { "value": "seul", "label": "Je réponds seul(e)" },
+        { "value": "famille", "label": "Je réponds avec ma famille" },
+        { "value": "pro", "label": "Je réponds avec un professionnel" }
+      ]
+    },
+    {
+      "id": "q2",
+      "title": "Qu’est-ce qui est le plus important pour toi en ce moment ?",
+      "type": "single",
+      "choices": [
+        { "value": "autonomie", "label": "Être plus autonome" },
+        { "value": "ecole", "label": "Apprendre / l’école" },
+        { "value": "relations", "label": "Mes amis / ma famille" },
+        { "value": "bienetre", "label": "Mon bien-être / ma santé" }
+      ]
+    },
+    {
+      "id": "q3",
+      "title": "As-tu besoin d’aide pour certaines choses au quotidien ?",
+      "type": "single",
+      "choices": [
+        { "value": "non", "label": "Non" },
+        { "value": "un_peu", "label": "Oui, un peu" },
+        { "value": "beaucoup", "label": "Oui, beaucoup" }
+      ]
+    },
+    {
+        "id" : "q4",
+        "title" : "Quels sont tes loisirs préférés ?",
+        "type" : "multiple",
+        "choices" : [
+            { "value" : "sport", "label" : "Le sport" },
+            { "value" : "musique", "label" : "La musique" },
+            { "value" : "lecture", "label" : "La lecture" },
+            { "value" : "jeux_video", "label" : "Les jeux vidéo" },
+            { "value" : "art", "label" : "L'art / le dessin" }
+        ]
+    }
+  ]
+}

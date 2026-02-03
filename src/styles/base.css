@@ -1,0 +1,31 @@
+:root{
+  --bg:#f6f8fb;
+  --surface:#ffffff;
+  --text:#1b1f2a;
+  --muted:#5b667a;
+  --line:#e2e7f0;
+
+  /* Vert institutionnel (Adapei-like) */
+  --primary:#55a83a;
+  --primary-dark:#3f8f2a;
+  --primary-soft:#e8f6e3;
+
+  --radius:18px;
+  --radius-sm:12px;
+  --pad:16px;
+  --shadow:0 10px 24px rgba(16,24,40,.10);
+
+  font-size:18px;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+h1,h2{ margin:0 0 10px; }
+p{ margin:0 0 10px; }
