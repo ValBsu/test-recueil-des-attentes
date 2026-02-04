@@ -27,13 +27,37 @@ function getCurrentQuestion() {
   return questionnaire.questions[qIndex];
 }
 
+/* ------------------- AUDIO (TTS) ------------------- */
+function speakFR(text) {
+  if (!("speechSynthesis" in window)) {
+    alert("Audio non disponible sur ce navigateur.");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "fr-FR";
+  u.rate = 0.95;
+  u.pitch = 0.9;
+  window.speechSynthesis.speak(u);
+}
+
+function buildSpeechTextForQuestion(q) {
+  const choices = (q.choices || []).map((c) => c.label).join(". ");
+  return choices ? `${q.title}. Choix possibles : ${choices}.` : `${q.title}.`;
+}
+/* --------------------------------------------------- */
+
 function ensureQuizBox() {
   if (quizBox) return;
 
   // On remplace la carte de départ par une carte questionnaire
   const card = document.querySelector(".card");
   card.innerHTML = `
-    <h2 id="qTitle"></h2>
+    <div class="qHeader">
+      <h2 id="qTitle"></h2>
+      <button class="iconBtn" id="speakBtn" type="button" aria-label="Écouter la question">🔊</button>
+    </div>
+
     <div id="choices" class="choices"></div>
 
     <div class="navRow">
@@ -51,7 +75,13 @@ function ensureQuizBox() {
     prev: document.getElementById("prevBtn"),
     next: document.getElementById("nextBtn"),
     hint: document.getElementById("hint"),
+    speak: document.getElementById("speakBtn"),
   };
+
+  quizBox.speak.addEventListener("click", () => {
+    const q = getCurrentQuestion();
+    speakFR(buildSpeechTextForQuestion(q));
+  });
 
   quizBox.prev.addEventListener("click", () => {
     qIndex = Math.max(0, qIndex - 1);
@@ -77,6 +107,8 @@ function ensureQuizBox() {
 }
 
 function renderQuestion() {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+
   const q = getCurrentQuestion();
   quizBox.title.textContent = q.title;
 
@@ -115,6 +147,8 @@ function renderQuestion() {
 }
 
 function renderSummary() {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+
   const educLabel = badge.textContent;
 
   const summary = questionnaire.questions.map((q) => {
@@ -158,11 +192,8 @@ function renderSummary() {
   });
 
   document.getElementById("pdfBtn").addEventListener("click", async () => {
-    // Vérifie que la librairie est bien chargée
     if (typeof html2pdf === "undefined") {
-      alert(
-        "html2pdf n’est pas chargé. Ajoute le script html2pdf dans index.html (avant app.js)."
-      );
+      alert("html2pdf n’est pas chargé. Ajoute le script html2pdf dans index.html (avant app.js).");
       return;
     }
 

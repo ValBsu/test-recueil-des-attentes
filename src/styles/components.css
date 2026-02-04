@@ -107,3 +107,24 @@ select:focus{
   page-break-inside: avoid;
 }
 #pdfArea{ padding: 6px; }
+.qHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.iconBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.iconBtn:focus{
+  outline: 3px solid rgba(85,168,58,.35);
+  outline-offset: 2px;
+}
