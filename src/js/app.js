@@ -149,6 +149,7 @@ function renderQuestion() {
 function renderSummary() {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
+  const educatorId = select.value;     // IMPORTANT pour mapper sur l'email côté serveur
   const educLabel = badge.textContent;
 
   const summary = questionnaire.questions.map((q) => {
@@ -168,10 +169,10 @@ function renderSummary() {
 
     <div class="navRow">
       <button class="btn secondary" id="editBtn" type="button">← Modifier</button>
-      <button class="btn" id="pdfBtn" type="button">⬇️ Télécharger en PDF</button>
+      <button class="btn" id="sendBtn" type="button">✉️ Envoyer au référent</button>
     </div>
 
-    <p class="out">Le PDF est généré automatiquement.</p>
+    <p class="out" id="sendHint">Clique sur “Envoyer au référent” pour transmettre automatiquement le PDF.</p>
   `;
 
   const list = document.getElementById("summaryList");
@@ -185,35 +186,36 @@ function renderSummary() {
   });
 
   document.getElementById("editBtn").addEventListener("click", () => {
-    // Recrée la carte questionnaire
     quizBox = null;
     ensureQuizBox();
     renderQuestion();
   });
 
-  document.getElementById("pdfBtn").addEventListener("click", async () => {
-    if (typeof html2pdf === "undefined") {
-      alert("html2pdf n’est pas chargé. Ajoute le script html2pdf dans index.html (avant app.js).");
-      return;
-    }
-
-    const el = document.getElementById("pdfArea");
-    const filename = `recueil_${educLabel}_${new Date()
-      .toISOString()
-      .slice(0, 10)}.pdf`.replaceAll(" ", "_");
-
-    const opt = {
-      margin: 10,
-      filename,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    };
+  document.getElementById("sendBtn").addEventListener("click", async () => {
+    const hint = document.getElementById("sendHint");
+    hint.textContent = "Envoi en cours…";
 
     try {
-      await html2pdf().set(opt).from(el).save();
-    } catch (e) {
-      alert("Erreur lors de la génération du PDF.");
+      const res = await fetch("/.netlify/functions/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          educatorId,
+          educatorLabel: educLabel,
+          title: questionnaire?.title || "Recueil des attentes",
+          summary
+        })
+      });
+
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(t || "Erreur d’envoi");
+      }
+
+      hint.textContent = "Envoyé ✅ Le référent a reçu le PDF.";
+    } catch (err) {
+      hint.textContent = "Erreur d’envoi ❌";
+      alert("Erreur d’envoi ❌\n" + err.message);
     }
   });
 }
