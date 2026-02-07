@@ -5,21 +5,22 @@ const out = document.getElementById("out");
 
 let questionnaire = null;
 let qIndex = 0;
-let answers = {}; // { q1: "seul", q2: "autonomie", ... }
-
-// UI elements (créés dynamiquement)
+let answers = {}; // qId -> value
 let quizBox = null;
 
 function updateBadge() {
   const label = select.options[select.selectedIndex]?.textContent;
-  badge.textContent = label && label !== "— Sélectionner —" ? label : "à choisir";
+  badge.textContent =
+    label && label !== "— Sélectionner —" ? label : "à choisir";
 }
 
 select.addEventListener("change", updateBadge);
 updateBadge();
 
 async function loadQuestionnaire() {
-  const res = await fetch("./src/data/questionnaire.json", { cache: "no-store" });
+  const res = await fetch("./src/data/questionnaire.json", {
+    cache: "no-store",
+  });
   questionnaire = await res.json();
 }
 
@@ -27,7 +28,7 @@ function getCurrentQuestion() {
   return questionnaire.questions[qIndex];
 }
 
-/* ------------------- AUDIO (TTS) ------------------- */
+/* ------------------- AUDIO (lecture) ------------------- */
 function speakFR(text) {
   if (!("speechSynthesis" in window)) {
     alert("Audio non disponible sur ce navigateur.");
@@ -42,20 +43,27 @@ function speakFR(text) {
 }
 
 function buildSpeechTextForQuestion(q) {
-  const choices = (q.choices || []).map((c) => c.label).join(". ");
-  return choices ? `${q.title}. Choix possibles : ${choices}.` : `${q.title}.`;
+  const type = q.type || "single";
+  if (type === "text") {
+    return `${q.title}. Réponse libre.`;
+  }
+  const choices = (q.choices || [])
+    .map((c) => c.label)
+    .join(". ");
+  return choices
+    ? `${q.title}. Choix possibles : ${choices}.`
+    : `${q.title}.`;
 }
-/* --------------------------------------------------- */
+/* ------------------------------------------------------- */
 
 function ensureQuizBox() {
   if (quizBox) return;
 
-  // On remplace la carte de départ par une carte questionnaire
   const card = document.querySelector(".card");
   card.innerHTML = `
     <div class="qHeader">
       <h2 id="qTitle"></h2>
-      <button class="iconBtn" id="speakBtn" type="button" aria-label="Écouter la question">🔊</button>
+      <button class="iconBtn" id="speakBtn" type="button">🔊</button>
     </div>
 
     <div id="choices" class="choices"></div>
@@ -90,16 +98,18 @@ function ensureQuizBox() {
 
   quizBox.next.addEventListener("click", () => {
     const q = getCurrentQuestion();
-    if (!answers[q.id]) {
-      quizBox.hint.textContent = "Choisis une réponse pour continuer.";
+    const required = q.required !== false;
+    const val = answers[q.id];
+
+    if (required && (!val || String(val).trim() === "")) {
+      quizBox.hint.textContent = "Réponds pour continuer.";
       return;
     }
     quizBox.hint.textContent = "";
 
     const last = qIndex === questionnaire.questions.length - 1;
-    if (last) {
-      renderSummary();
-    } else {
+    if (last) renderSummary();
+    else {
       qIndex++;
       renderQuestion();
     }
@@ -111,58 +121,91 @@ function renderQuestion() {
 
   const q = getCurrentQuestion();
   quizBox.title.textContent = q.title;
-
   quizBox.choices.innerHTML = "";
-  const selected = answers[q.id] || "";
 
-  q.choices.forEach((c, i) => {
-    const id = `${q.id}_${i}`;
+  const type = q.type || "single";
 
-    const row = document.createElement("div");
-    row.className = "choiceRow";
+  // ---------- QUESTION TEXTE ----------
+  if (type === "text") {
+    const textarea = document.createElement("textarea");
+    textarea.className = "textAnswer";
+    textarea.rows = 4;
+    textarea.placeholder =
+      q.placeholder || "Écris ta réponse ici…";
+    textarea.value = answers[q.id] || "";
 
-    const input = document.createElement("input");
-    input.type = "radio";
-    input.name = q.id;
-    input.id = id;
-    input.value = c.value;
-    input.checked = c.value === selected;
-
-    input.addEventListener("change", () => {
-      answers[q.id] = c.value;
+    textarea.addEventListener("input", () => {
+      answers[q.id] = textarea.value;
     });
 
-    const label = document.createElement("label");
-    label.setAttribute("for", id);
-    label.textContent = c.label;
+    quizBox.choices.appendChild(textarea);
+  }
 
-    row.appendChild(input);
-    row.appendChild(label);
-    quizBox.choices.appendChild(row);
-  });
+  // ---------- QUESTION A CHOIX ----------
+  else {
+    const selected = answers[q.id] || "";
+
+    (q.choices || []).forEach((c, i) => {
+      const id = `${q.id}_${i}`;
+
+      const row = document.createElement("div");
+      row.className = "choiceRow";
+
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = q.id;
+      input.id = id;
+      input.value = c.value;
+      input.checked = c.value === selected;
+
+      input.addEventListener("change", () => {
+        answers[q.id] = c.value;
+      });
+
+      const label = document.createElement("label");
+      label.setAttribute("for", id);
+      label.textContent = c.label;
+
+      row.appendChild(input);
+      row.appendChild(label);
+      quizBox.choices.appendChild(row);
+    });
+  }
 
   quizBox.prev.disabled = qIndex === 0;
   quizBox.next.textContent =
-    qIndex === questionnaire.questions.length - 1 ? "Terminer →" : "Suivant →";
+    qIndex === questionnaire.questions.length - 1
+      ? "Terminer →"
+      : "Suivant →";
 }
 
 function renderSummary() {
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-
-  const educatorId = select.value;     // IMPORTANT pour mapper sur l'email côté serveur
+  const educatorId = select.value;
   const educLabel = badge.textContent;
 
   const summary = questionnaire.questions.map((q) => {
-    const val = answers[q.id];
-    const label = q.choices.find((c) => c.value === val)?.label || "";
+    const val = answers[q.id] ?? "";
+
+    if ((q.type || "single") === "text") {
+      return { question: q.title, answer: String(val) };
+    }
+
+    const label = (q.choices || []).find(
+      (c) => c.value === val
+    )?.label || "";
+
     return { question: q.title, answer: label };
   });
 
   quizBox.card.innerHTML = `
     <div id="pdfArea">
       <h2>Récapitulatif</h2>
-      <p class="out"><strong>Éducateur :</strong> ${escapeHtml(educLabel)}</p>
-      <p class="out"><strong>Date :</strong> ${new Date().toLocaleString("fr-FR")}</p>
+      <p class="out"><strong>Éducateur :</strong> ${escapeHtml(
+        educLabel
+      )}</p>
+      <p class="out"><strong>Date :</strong> ${new Date().toLocaleString(
+        "fr-FR"
+      )}</p>
 
       <div class="summaryList" id="summaryList"></div>
     </div>
@@ -172,16 +215,16 @@ function renderSummary() {
       <button class="btn" id="sendBtn" type="button">✉️ Envoyer au référent</button>
     </div>
 
-    <p class="out" id="sendHint">Clique sur “Envoyer au référent” pour transmettre automatiquement le PDF.</p>
+    <p class="out" id="sendHint"></p>
   `;
 
   const list = document.getElementById("summaryList");
   summary.forEach((item) => {
     const div = document.createElement("div");
     div.className = "summaryItem";
-    div.innerHTML = `<strong>${escapeHtml(item.question)}</strong><div>${escapeHtml(
-      item.answer
-    )}</div>`;
+    div.innerHTML = `<strong>${escapeHtml(
+      item.question
+    )}</strong><div>${escapeHtml(item.answer)}</div>`;
     list.appendChild(div);
   });
 
@@ -202,17 +245,14 @@ function renderSummary() {
         body: JSON.stringify({
           educatorId,
           educatorLabel: educLabel,
-          title: questionnaire?.title || "Recueil des attentes",
-          summary
-        })
+          summary,
+        }),
       });
 
-      if (!res.ok) {
-        const t = await res.text();
-        throw new Error(t || "Erreur d’envoi");
-      }
+      const txt = await res.text();
+      if (!res.ok) throw new Error(txt || "Erreur d’envoi");
 
-      hint.textContent = "Envoyé ✅ Le référent a reçu le PDF.";
+      hint.textContent = "Envoyé ✅";
     } catch (err) {
       hint.textContent = "Erreur d’envoi ❌";
       alert("Erreur d’envoi ❌\n" + err.message);
@@ -231,7 +271,8 @@ function escapeHtml(s) {
 
 btn.addEventListener("click", async () => {
   if (!select.value) {
-    out.textContent = "Merci de choisir ton éducateur avant de continuer.";
+    out.textContent =
+      "Merci de choisir ton éducateur avant de continuer.";
     return;
   }
   out.textContent = "";

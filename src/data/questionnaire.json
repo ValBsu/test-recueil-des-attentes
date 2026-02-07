@@ -2,62 +2,81 @@
   "title": "Recueil des attentes",
   "questions": [
     {
-      "id": "q1",
-      "title": "Avec qui fais-tu ce questionnaire ?",
+  "id": "q_open_1",
+  "type": "text",
+  "title": "Quel est ton prénom?",
+  "placeholder": "Tu peux écrire ici…",
+  "required": false
+},
+{
+  "id": "q_open_2",
+  "type": "text",
+  "title": "Quel est ton nom ?",
+  "placeholder": "Tu peux écrire ici…",
+  "required": false
+},
+{
+  "id": "q_open_3",
+  "type": "text",
+  "title": "Quel âge as-tu ?",
+  "placeholder": "Tu peux écrire ici…",
+  "required": false
+},
+    {
+      "id": "q4",
+      "title": "Comment te sens-tu ?",
       "type": "single",
       "choices": [
-        { "value": "seul", "label": "Je réponds seul(e)" },
-        { "value": "famille", "label": "Je réponds avec ma famille" },
-        { "value": "pro", "label": "Je réponds avec un professionnel" },
-        { "value": "el mustache", "label": "Je réponds avec El Mustache" }
+        { "value": "content", "label": "Je suis content" },
+        { "value": "fatigue", "label": "Je me sens fatigué(e)" },
+        { "value": "colère", "label": "Je suis en colère" },
+        { "value": "triste", "label": "Je me sens triste" }
       ]
-    },
-    {
-      "id": "q2",
-      "title": "Qu’est-ce qui est le plus important pour toi en ce moment ?",
-      "type": "single",
-      "choices": [
-        { "value": "autonomie", "label": "Être plus autonome" },
-        { "value": "ecole", "label": "Apprendre / l’école" },
-        { "value": "relations", "label": "Mes amis / ma famille" },
-        { "value": "bienetre", "label": "Mon bien-être / ma santé" }
-      ]
-    },
-    {
-      "id": "q3",
-      "title": "As-tu besoin d’aide pour certaines choses au quotidien ?",
-      "type": "single",
-      "choices": [
-        { "value": "non", "label": "Non" },
-        { "value": "un_peu", "label": "Oui, un peu" },
-        { "value": "beaucoup", "label": "Oui, beaucoup" }
-      ]
-    },
-    {
-        "id" : "q4",
-        "title" : "Quels sont tes loisirs préférés ?",
-        "type" : "multiple",
-        "choices" : [
-            { "value" : "sport", "label" : "Le sport" },
-            { "value" : "musique", "label" : "La musique" },
-            { "value" : "lecture", "label" : "La lecture" },
-            { "value" : "jeux_video", "label" : "Les jeux vidéo" },
-            { "value" : "art", "label" : "L'art / le dessin" }
-        ]
     },
     {
       "id": "q5",
-      "title": "Manges-tu bien au self ?",
-      "type": "multiple",
+      "title": "Que fais-tu quand tu es en colère?",
+      "type": "single",
       "choices": [
-        { "value": "oui", "label": "Restoria c'est du gastro" },
-        { "value": "mcdo", "label": "On peut avoir un Mcdo ?" },
-        { "value": "Non", "label": "Ma mère cuisine mieux" }
+        { "value": "aide", "label": "Je demande de l’aide à un éducateur" },
+        { "value": "fache", "label": "Je crie, tape, insulte" },
+        { "value": "calme", "label": "Je respire pour me calmer" },
+        { "value": "jeter", "label": "Je jète des objets" }
       ]
     },
     {
       "id": "q6",
-      "title": "As-tu des projets pour l’avenir ?",
+      "title": "Est ce que tu manges bien au self ?",
+      "type": "single",
+      "choices": [
+        { "value": "oui", "label": "Oui" },
+        { "value": "non", "label": "Non" },
+        { "value": "ne sais pas", "label": "Je ne sais pas" }
+      ]
+    },
+    {
+        "id" : "q7",
+        "title" : "A la maison tu manges bien ?",
+        "type" : "multiple",
+        "choices" : [
+            { "value" : "oui", "label" : "Oui" },
+            { "value" : "non", "label" : "Non" },
+            { "value" : "je ne sais pas", "label" : "Je ne sais pas" }
+        ]
+    },
+    {
+      "id": "q8",
+      "title": "Tu dors bien à la maison?",
+      "type": "multiple",
+      "choices": [
+        { "value": "oui", "label": "Oui" },
+        { "value": "je ne sais pas", "label": "Je ne sais pas" },
+        { "value": "Non", "label": "Non" }
+      ]
+    },
+    {
+      "id": "q9",
+      "title": "Est ce que tu as de la psychomotricité avec Mathilde ?",
       "type": "single",
       "choices": [
         { "value": "oui", "label": "Oui" },
@@ -65,15 +84,81 @@
       ]
     },  
     {
-      "id": "q7",
-      "title": "Où te vois tu dans 5 ans ?",
+      "id": "q10",
+      "title": "est ce que tu voit Mélanie l'infirmière ?",
       "type": "multiple",
       "choices": [
-        { "value": "travail", "label": "En ESAT" },
-        { "value": "console", "label": "Devans ma console" },
-        { "value": "non", "label": "Je ne sais pas" },
-        { "value": "famille", "label": "Chez ma mère" } 
+        { "value": "oui", "label": "Oui" },
+        { "value": "non", "label": "Non" },
+        { "value": "je ne sais pas", "label": "Je ne sais pas" }
       ]
-    } 
+    },
+    {
+  "id": "q_open_11",
+  "type": "multiple",
+  "title": "Quelle psychologue vois-tu à l'IME ?",
+  "choices": [
+    { "value": "lucie", "label": "Lucie" },  
+    { "value": "louise", "label": "Louise" },
+    { "value": "camille", "label": "Camille" },
+    { "value": "frédérique", "label": "Frédérique" },
+    { "value": "je ne vois pas de psychologue", "label": "Je ne vois pas de psychologue" }
+    ]
+    },
+    {
+  "id" : "q12",
+      "title" : "Tu as des copains à l'IME ?",
+      "type": "single",
+      "choices": [
+        { "value": "oui", "label": "Oui" },
+        { "value": "non", "label": "Non" }
+      ]
+    
+    },
+
+    {
+      "id" : "q13",
+      "title" : "Tu fais du sport à l'IME ?",
+      "type": "single",
+      "choices": [
+        { "value": "oui", "label": "Oui" },
+        { "value": "non", "label": "Non" }
+      ]
+    },
+    {
+      "id" : "q14",
+      "title" : "Fais tu du sport en dehors de l'IME ?",
+      "type": "single",
+      "choices": [
+        { "value": "oui", "label": "Oui" },
+        { "value": "pole3", "label": "Oui au Pôle 3 avec Théo" },
+        { "value": "club", "label": "Oui dans un club de sport" },
+        { "value": "non", "label": "Non" }
+      ]
+    },
+    {
+      "id" : "q15",
+      "title" : "Ton emploi du temps de plait, tu le trouve comment ?",
+      "type": "single",
+      "choices": [
+        { "value": "super", "label": "Super bien" },
+        { "value": "bien", "label": "Bien" },
+        { "value": "je n'aime pas", "label": "Pas bien" }
+      ]
+    },
+    {
+      "id" : "q16",
+      "title" : "Tu as des activités que tu n'aime pas à l'IME ?",
+      "type": "text",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    },
+    {
+      "id" : "q17",
+      "title" : "Tu as des activités que tu aimes à l'IME ?",
+      "type": "text",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    }
   ]
 }
