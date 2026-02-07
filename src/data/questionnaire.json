@@ -85,7 +85,7 @@
     },  
     {
       "id": "q10",
-      "title": "est ce que tu voit Mélanie l'infirmière ?",
+      "title": "est ce que tu vois Mélanie l'infirmière ?",
       "type": "multiple",
       "choices": [
         { "value": "oui", "label": "Oui" },

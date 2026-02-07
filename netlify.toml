@@ -1,4 +1,10 @@
 [build]
   publish = "."
   functions = "netlify/functions"
-  command = "npm install"
+  command = ""
+
+# (optionnel) si ton site agit comme une SPA et que tu veux éviter les 404
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

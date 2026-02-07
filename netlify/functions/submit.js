@@ -17,6 +17,8 @@ async function buildPdf({ educatorLabel, summary }) {
   const x = 50;
 
   const line = (text, size = 12) => {
+    // Evite crash si dépasse la page (simple)
+    if (y < 60) return;
     page.drawText(text, { x, y, size, font });
     y -= size * 1.6;
   };
@@ -33,28 +35,29 @@ async function buildPdf({ educatorLabel, summary }) {
     y -= 6;
   });
 
-  const bytes = await pdf.save();
+  const bytes = await pdf.save(); // Uint8Array
+  // Buffer est OK en Netlify Function (Node)
   return Buffer.from(bytes);
 }
 
-export default async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+export async function handler(event) {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   try {
-    const body = await req.json();
+    const body = JSON.parse(event.body || "{}");
     const { educatorId, educatorLabel, summary } = body;
 
-    if (!educatorId || !educatorLabel || !summary) {
-      return new Response("Bad request", { status: 400 });
+    if (!educatorId || !educatorLabel || !Array.isArray(summary)) {
+      return { statusCode: 400, body: "Bad request" };
     }
 
     const emailMap = JSON.parse(process.env.EDUCATOR_EMAIL_MAP || "{}");
     const to = emailMap[educatorId];
 
     if (!to) {
-      return new Response("Educator not found", { status: 400 });
+      return { statusCode: 400, body: "Educator not found" };
     }
 
     const pdfBuffer = await buildPdf({ educatorLabel, summary });
@@ -81,14 +84,15 @@ export default async (req) => {
 
     if (!res.ok) {
       const t = await res.text();
-      return new Response(t, { status: 500 });
+      return { statusCode: 500, body: t };
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
+    return {
+      statusCode: 200,
       headers: { "Content-Type": "application/json" },
-    });
+      body: JSON.stringify({ ok: true }),
+    };
   } catch (e) {
-    return new Response("Server error", { status: 500 });
+    return { statusCode: 500, body: "Server error" };
   }
-};
+}

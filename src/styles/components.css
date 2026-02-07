@@ -137,3 +137,12 @@ select:focus{
   min-height:110px;
   resize:vertical;
 }
+.qActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.iconBtn.is-listening {
+  transform: scale(1.08);
+}

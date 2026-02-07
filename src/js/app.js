@@ -1,3 +1,5 @@
+// app.js (fichier complet corrigé à copier-coller)
+
 const select = document.getElementById("educSelect");
 const badge = document.getElementById("educBadge");
 const btn = document.getElementById("startBtn");
@@ -10,17 +12,14 @@ let quizBox = null;
 
 function updateBadge() {
   const label = select.options[select.selectedIndex]?.textContent;
-  badge.textContent =
-    label && label !== "— Sélectionner —" ? label : "à choisir";
+  badge.textContent = label && label !== "— Sélectionner —" ? label : "à choisir";
 }
 
 select.addEventListener("change", updateBadge);
 updateBadge();
 
 async function loadQuestionnaire() {
-  const res = await fetch("./src/data/questionnaire.json", {
-    cache: "no-store",
-  });
+  const res = await fetch("./src/data/questionnaire.json", { cache: "no-store" });
   questionnaire = await res.json();
 }
 
@@ -44,17 +43,123 @@ function speakFR(text) {
 
 function buildSpeechTextForQuestion(q) {
   const type = q.type || "single";
-  if (type === "text") {
-    return `${q.title}. Réponse libre.`;
-  }
-  const choices = (q.choices || [])
-    .map((c) => c.label)
-    .join(". ");
-  return choices
-    ? `${q.title}. Choix possibles : ${choices}.`
-    : `${q.title}.`;
+  if (type === "text") return `${q.title}. Réponse libre.`;
+  const choices = (q.choices || []).map((c) => c.label).join(". ");
+  return choices ? `${q.title}. Choix possibles : ${choices}.` : `${q.title}.`;
 }
 /* ------------------------------------------------------- */
+
+/* ------------------- DICTÉE (micro) ------------------- */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let recog = null;
+let listening = false;
+let interimBaseValue = ""; // contenu de départ au moment où on lance la dictée
+
+function getActiveTextArea() {
+  return document.querySelector(".textAnswer");
+}
+
+function setMicUI(on) {
+  listening = on;
+  if (!quizBox?.mic) return;
+  quizBox.mic.textContent = on ? "⏹️" : "🎤";
+  quizBox.mic.classList.toggle("is-listening", on);
+  quizBox.mic.title = on ? "Arrêter la dictée" : "Dicter la réponse";
+}
+
+function setupSpeechRecognitionIfNeeded() {
+  if (!SpeechRecognition || recog) return;
+
+  recog = new SpeechRecognition();
+  recog.lang = "fr-FR";
+  recog.interimResults = true; // on affiche pendant qu'il parle
+  recog.continuous = false;
+
+  // ✅ FIX: on remplace l'interim au lieu d'ajouter en boucle
+  recog.onresult = (e) => {
+    const ta = getActiveTextArea();
+    if (!ta) return;
+
+    let interim = "";
+    let finalText = "";
+
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const chunk = (e.results[i][0]?.transcript || "").trim();
+      if (!chunk) continue;
+
+      if (e.results[i].isFinal) finalText += (finalText ? " " : "") + chunk;
+      else interim += (interim ? " " : "") + chunk;
+    }
+
+    const base = interimBaseValue ? interimBaseValue + " " : "";
+
+    if (finalText) {
+      ta.value = (base + finalText).trim();
+
+      // maj answers
+      const q = getCurrentQuestion();
+      answers[q.id] = ta.value;
+
+      // on actualise la base (utile si plusieurs segments finaux arrivent)
+      interimBaseValue = ta.value.trim();
+    } else if (interim) {
+      // provisoire : on affiche sans "coller" définitivement
+      ta.value = (base + interim).trim();
+    }
+  };
+
+  recog.onerror = (e) => {
+    setMicUI(false);
+    if (e?.error === "not-allowed") {
+      alert("Autorise l’accès au micro pour utiliser la dictée.");
+    }
+  };
+
+  recog.onend = () => {
+    setMicUI(false);
+  };
+}
+
+function toggleDictation() {
+  const q = getCurrentQuestion();
+  const type = q.type || "single";
+
+  if (type !== "text") {
+    alert("Le micro est disponible seulement pour les réponses libres.");
+    return;
+  }
+
+  const ta = getActiveTextArea();
+  if (!ta) return;
+
+  if (!SpeechRecognition) {
+    ta.focus();
+    alert("Dictée automatique non supportée ici. Utilise le micro du clavier.");
+    return;
+  }
+
+  setupSpeechRecognitionIfNeeded();
+  if (!recog) return;
+
+  if (!listening) {
+    try {
+      ta.focus();
+
+      // ✅ FIX: on mémorise le texte avant dictée (base)
+      interimBaseValue = ta.value.trim();
+
+      recog.start();
+      setMicUI(true);
+    } catch (e) {
+      // start peut throw si déjà lancé
+    }
+  } else {
+    recog.stop();
+    setMicUI(false);
+  }
+}
+/* ------------------------------------------------------ */
 
 function ensureQuizBox() {
   if (quizBox) return;
@@ -63,7 +168,11 @@ function ensureQuizBox() {
   card.innerHTML = `
     <div class="qHeader">
       <h2 id="qTitle"></h2>
-      <button class="iconBtn" id="speakBtn" type="button">🔊</button>
+
+      <div class="qActions">
+        <button class="iconBtn" id="speakBtn" type="button" title="Énoncer la question">🔊</button>
+        <button class="iconBtn" id="micBtn" type="button" title="Dicter la réponse">🎤</button>
+      </div>
     </div>
 
     <div id="choices" class="choices"></div>
@@ -84,11 +193,16 @@ function ensureQuizBox() {
     next: document.getElementById("nextBtn"),
     hint: document.getElementById("hint"),
     speak: document.getElementById("speakBtn"),
+    mic: document.getElementById("micBtn"),
   };
 
   quizBox.speak.addEventListener("click", () => {
     const q = getCurrentQuestion();
     speakFR(buildSpeechTextForQuestion(q));
+  });
+
+  quizBox.mic.addEventListener("click", () => {
+    toggleDictation();
   });
 
   quizBox.prev.addEventListener("click", () => {
@@ -119,6 +233,14 @@ function ensureQuizBox() {
 function renderQuestion() {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
+  // coupe dictée si en cours
+  if (recog && listening) {
+    try {
+      recog.stop();
+    } catch (e) {}
+    setMicUI(false);
+  }
+
   const q = getCurrentQuestion();
   quizBox.title.textContent = q.title;
   quizBox.choices.innerHTML = "";
@@ -130,8 +252,7 @@ function renderQuestion() {
     const textarea = document.createElement("textarea");
     textarea.className = "textAnswer";
     textarea.rows = 4;
-    textarea.placeholder =
-      q.placeholder || "Écris ta réponse ici…";
+    textarea.placeholder = q.placeholder || "Écris ta réponse ici…";
     textarea.value = answers[q.id] || "";
 
     textarea.addEventListener("input", () => {
@@ -143,7 +264,9 @@ function renderQuestion() {
 
   // ---------- QUESTION A CHOIX ----------
   else {
-    const selected = answers[q.id] || "";
+    const isMultiple = q.type === "multiple";
+    const selected = answers[q.id] || (isMultiple ? [] : "");
+    const selectedArray = Array.isArray(selected) ? selected : [];
 
     (q.choices || []).forEach((c, i) => {
       const id = `${q.id}_${i}`;
@@ -152,14 +275,24 @@ function renderQuestion() {
       row.className = "choiceRow";
 
       const input = document.createElement("input");
-      input.type = "radio";
+      input.type = isMultiple ? "checkbox" : "radio";
       input.name = q.id;
       input.id = id;
       input.value = c.value;
-      input.checked = c.value === selected;
+      input.checked = isMultiple ? selectedArray.includes(c.value) : c.value === selected;
 
       input.addEventListener("change", () => {
-        answers[q.id] = c.value;
+        if (isMultiple) {
+          let arr = Array.isArray(answers[q.id]) ? [...answers[q.id]] : [];
+          if (input.checked) {
+            if (!arr.includes(c.value)) arr.push(c.value);
+          } else {
+            arr = arr.filter((v) => v !== c.value);
+          }
+          answers[q.id] = arr;
+        } else {
+          answers[q.id] = c.value;
+        }
       });
 
       const label = document.createElement("label");
@@ -174,9 +307,7 @@ function renderQuestion() {
 
   quizBox.prev.disabled = qIndex === 0;
   quizBox.next.textContent =
-    qIndex === questionnaire.questions.length - 1
-      ? "Terminer →"
-      : "Suivant →";
+    qIndex === questionnaire.questions.length - 1 ? "Terminer →" : "Suivant →";
 }
 
 function renderSummary() {
@@ -185,27 +316,30 @@ function renderSummary() {
 
   const summary = questionnaire.questions.map((q) => {
     const val = answers[q.id] ?? "";
+    const isMultiple = q.type === "multiple";
 
     if ((q.type || "single") === "text") {
       return { question: q.title, answer: String(val) };
     }
 
-    const label = (q.choices || []).find(
-      (c) => c.value === val
-    )?.label || "";
+    if (isMultiple) {
+      const selectedVals = Array.isArray(val) ? val : [];
+      const labels = selectedVals
+        .map((v) => (q.choices || []).find((c) => c.value === v)?.label)
+        .filter(Boolean)
+        .join("; ");
+      return { question: q.title, answer: labels };
+    }
 
+    const label = (q.choices || []).find((c) => c.value === val)?.label || "";
     return { question: q.title, answer: label };
   });
 
   quizBox.card.innerHTML = `
     <div id="pdfArea">
       <h2>Récapitulatif</h2>
-      <p class="out"><strong>Éducateur :</strong> ${escapeHtml(
-        educLabel
-      )}</p>
-      <p class="out"><strong>Date :</strong> ${new Date().toLocaleString(
-        "fr-FR"
-      )}</p>
+      <p class="out"><strong>Éducateur :</strong> ${escapeHtml(educLabel)}</p>
+      <p class="out"><strong>Date :</strong> ${new Date().toLocaleString("fr-FR")}</p>
 
       <div class="summaryList" id="summaryList"></div>
     </div>
@@ -222,9 +356,9 @@ function renderSummary() {
   summary.forEach((item) => {
     const div = document.createElement("div");
     div.className = "summaryItem";
-    div.innerHTML = `<strong>${escapeHtml(
-      item.question
-    )}</strong><div>${escapeHtml(item.answer)}</div>`;
+    div.innerHTML = `<strong>${escapeHtml(item.question)}</strong><div>${escapeHtml(
+      item.answer
+    )}</div>`;
     list.appendChild(div);
   });
 
@@ -271,8 +405,7 @@ function escapeHtml(s) {
 
 btn.addEventListener("click", async () => {
   if (!select.value) {
-    out.textContent =
-      "Merci de choisir ton éducateur avant de continuer.";
+    out.textContent = "Merci de choisir ton éducateur avant de continuer.";
     return;
   }
   out.textContent = "";
