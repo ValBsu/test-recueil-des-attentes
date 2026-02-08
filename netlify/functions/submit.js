@@ -1,4 +1,4 @@
-// netlify/functions/submit.js (version corrigée + logs détaillés)
+// netlify/functions/submit.js (corrigé: pas de "→" + logs)
 
 import { PDFDocument, StandardFonts } from "pdf-lib";
 
@@ -19,20 +19,20 @@ async function buildPdf({ educatorLabel, summary }) {
   const x = 50;
 
   const line = (text, size = 12) => {
-    if (y < 60) return; // évite dépassement de page (simple)
+    if (y < 60) return;
     page.drawText(text, { x, y, size, font });
     y -= size * 1.6;
   };
 
   line("Recueil des attentes", 18);
   y -= 10;
-  line(`Éducateur : ${educatorLabel}`);
+  line(`Educateur : ${educatorLabel}`); // (optionnel: sans accent si tu veux être 100% safe)
   line(`Date : ${nowFR()}`);
   y -= 15;
 
   summary.forEach((item) => {
     line(`• ${clean(item.question)}`, 11);
-    line(`  → ${clean(item.answer)}`, 11);
+    line(`  -> ${clean(item.answer)}`, 11); // ✅ remplacé
     y -= 6;
   });
 
@@ -55,20 +55,12 @@ export async function handler(event) {
 
     const emailMap = JSON.parse(process.env.EDUCATOR_EMAIL_MAP || "{}");
     const to = emailMap[educatorId];
-
-    if (!to) {
-      return { statusCode: 400, body: "Educator not found" };
-    }
+    if (!to) return { statusCode: 400, body: "Educator not found" };
 
     const from = process.env.MAIL_FROM;
     const apiKey = process.env.RESEND_API_KEY;
-
-    if (!from) {
-      return { statusCode: 500, body: "Missing MAIL_FROM env var" };
-    }
-    if (!apiKey) {
-      return { statusCode: 500, body: "Missing RESEND_API_KEY env var" };
-    }
+    if (!from) return { statusCode: 500, body: "Missing MAIL_FROM env var" };
+    if (!apiKey) return { statusCode: 500, body: "Missing RESEND_API_KEY env var" };
 
     const pdfBuffer = await buildPdf({ educatorLabel, summary });
 
@@ -76,7 +68,7 @@ export async function handler(event) {
       from,
       to: [to],
       subject: `Recueil des attentes – ${educatorLabel}`,
-      text: `Un recueil des attentes vient d’être complété.\n\nÉducateur : ${educatorLabel}\nDate : ${nowFR()}`,
+      text: `Un recueil des attentes vient d’etre complete.\n\nEducateur : ${educatorLabel}\nDate : ${nowFR()}`,
       attachments: [
         {
           filename: "recueil-attentes.pdf",
@@ -97,15 +89,7 @@ export async function handler(event) {
     const text = await res.text();
 
     if (!res.ok) {
-      // ✅ logs visibles dans Netlify → Logs & metrics → Functions → submit
       console.error("Resend error:", res.status, text);
-      console.error("Resend payload (sans clé):", {
-        from,
-        to,
-        subject: payload.subject,
-        hasAttachment: true,
-      });
-
       return { statusCode: 500, body: text || `Resend error ${res.status}` };
     }
 
