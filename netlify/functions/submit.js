@@ -1,3 +1,5 @@
+// netlify/functions/submit.js (version corrigée + logs détaillés)
+
 import { PDFDocument, StandardFonts } from "pdf-lib";
 
 function nowFR() {
@@ -17,8 +19,7 @@ async function buildPdf({ educatorLabel, summary }) {
   const x = 50;
 
   const line = (text, size = 12) => {
-    // Evite crash si dépasse la page (simple)
-    if (y < 60) return;
+    if (y < 60) return; // évite dépassement de page (simple)
     page.drawText(text, { x, y, size, font });
     y -= size * 1.6;
   };
@@ -35,8 +36,7 @@ async function buildPdf({ educatorLabel, summary }) {
     y -= 6;
   });
 
-  const bytes = await pdf.save(); // Uint8Array
-  // Buffer est OK en Netlify Function (Node)
+  const bytes = await pdf.save();
   return Buffer.from(bytes);
 }
 
@@ -60,31 +60,53 @@ export async function handler(event) {
       return { statusCode: 400, body: "Educator not found" };
     }
 
+    const from = process.env.MAIL_FROM;
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!from) {
+      return { statusCode: 500, body: "Missing MAIL_FROM env var" };
+    }
+    if (!apiKey) {
+      return { statusCode: 500, body: "Missing RESEND_API_KEY env var" };
+    }
+
     const pdfBuffer = await buildPdf({ educatorLabel, summary });
+
+    const payload = {
+      from,
+      to: [to],
+      subject: `Recueil des attentes – ${educatorLabel}`,
+      text: `Un recueil des attentes vient d’être complété.\n\nÉducateur : ${educatorLabel}\nDate : ${nowFR()}`,
+      attachments: [
+        {
+          filename: "recueil-attentes.pdf",
+          content: pdfBuffer.toString("base64"),
+        },
+      ],
+    };
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: process.env.MAIL_FROM,
-        to: [to],
-        subject: `Recueil des attentes – ${educatorLabel}`,
-        text: `Un recueil des attentes vient d’être complété.\n\nÉducateur : ${educatorLabel}\nDate : ${nowFR()}`,
-        attachments: [
-          {
-            filename: "recueil-attentes.pdf",
-            content: pdfBuffer.toString("base64"),
-          },
-        ],
-      }),
+      body: JSON.stringify(payload),
     });
 
+    const text = await res.text();
+
     if (!res.ok) {
-      const t = await res.text();
-      return { statusCode: 500, body: t };
+      // ✅ logs visibles dans Netlify → Logs & metrics → Functions → submit
+      console.error("Resend error:", res.status, text);
+      console.error("Resend payload (sans clé):", {
+        from,
+        to,
+        subject: payload.subject,
+        hasAttachment: true,
+      });
+
+      return { statusCode: 500, body: text || `Resend error ${res.status}` };
     }
 
     return {
@@ -93,6 +115,7 @@ export async function handler(event) {
       body: JSON.stringify({ ok: true }),
     };
   } catch (e) {
-    return { statusCode: 500, body: "Server error" };
+    console.error("Submit error:", e);
+    return { statusCode: 500, body: String(e?.message || e) };
   }
 }
