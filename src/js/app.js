@@ -1,15 +1,10 @@
-// app.js (fichier complet REORGANISÉ + NETTOYÉ, sans rien casser)
-// ✅ Écran de choix AU DÉMARRAGE (Famille / Jeunes) en overlay (ne détruit pas le DOM d’accueil)
-// ✅ Charge automatiquement le bon JSON :
-//    - Jeunes  -> ./src/data/questionnaire.json
-//    - Famille -> ./src/data/questionnaire_famille.json
-//    - Fallback sécurité -> ./src/data/questionnaire.json
-// ✅ FIX dictée : les réponses "interim" visibles sont sauvegardées avant Suivant/Précédent + avant Récap
+// app.js (fichier complet REORGANISÉ + PREMIUM progress réel)
+// ✅ Choix AU DÉMARRAGE (Famille / Jeunes) en overlay (ne détruit pas le DOM d’accueil)
+// ✅ Charge automatiquement le bon JSON (famille/jeunes) + fallback sécurité
+// ✅ FIX dictée : les réponses "interim" visibles sont sauvegardées avant navigation + récap
 // ✅ Audio lecture question
+// ✅ Progression réelle : "Question X/Y" + "%"
 
-/* =========================
-   0) DOM de base (Accueil)
-   ========================= */
 const select = document.getElementById("educSelect");
 const badge = document.getElementById("educBadge");
 const btn = document.getElementById("startBtn");
@@ -462,11 +457,10 @@ function setupSpeechRecognitionIfNeeded() {
     if (finalText) {
       ta.value = (base + finalText).trim();
       const q = getCurrentQuestion();
-      answers[q.id] = ta.value; // ✅ enregistré quand final
+      answers[q.id] = ta.value;
       interimBaseValue = ta.value.trim();
     } else if (interim) {
       ta.value = (base + interim).trim();
-      // ⚠️ interim visible -> commit sur navigation / stop / fin
     }
   };
 
@@ -479,7 +473,6 @@ function setupSpeechRecognitionIfNeeded() {
 
   recog.onend = () => {
     setMicUI(false);
-    // ✅ sécurité : si visible, on sauvegarde
     commitCurrentTextAnswerIfAny();
   };
 }
@@ -522,13 +515,42 @@ function toggleDictation() {
 }
 
 /* =========================
-   12) UI Questionnaire (quizBox)
+   12) Progress UI
+   ========================= */
+function updateProgressUI() {
+  if (!quizBox?.progressFill || !questionnaire?.questions?.length) return;
+
+  const total = questionnaire.questions.length;
+  const current = Math.min(total, Math.max(1, qIndex + 1));
+  const pct = Math.round((current / total) * 100);
+
+  quizBox.progressText.textContent = `Question ${current}/${total}`;
+  quizBox.progressPct.textContent = `${pct}%`;
+  quizBox.progressFill.style.width = `${pct}%`;
+
+  if (quizBox.progressTrack) {
+    quizBox.progressTrack.setAttribute("aria-valuenow", String(pct));
+  }
+}
+
+/* =========================
+   13) UI Questionnaire (quizBox)
    ========================= */
 function ensureQuizBox() {
   if (quizBox) return;
 
   const card = document.querySelector(".card");
   card.innerHTML = `
+    <div class="progressWrap" aria-label="Progression du questionnaire">
+      <div class="progressTop">
+        <div class="progressText" id="progressText">Question 1/1</div>
+        <div class="progressPct" id="progressPct">0%</div>
+      </div>
+      <div class="progressTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progressFill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
     <div class="qHeader">
       <h2 id="qTitle"></h2>
       <div id="qPictoWrap" class="qPictoWrap" style="display:none;"></div>
@@ -596,6 +618,11 @@ function ensureQuizBox() {
     speak: document.getElementById("speakBtn"),
     mic: document.getElementById("micBtn"),
     pictoWrap: document.getElementById("qPictoWrap"),
+
+    progressText: document.getElementById("progressText"),
+    progressPct: document.getElementById("progressPct"),
+    progressFill: document.getElementById("progressFill"),
+    progressTrack: document.querySelector(".progressTrack"),
   };
 
   quizBox.speak.addEventListener("click", () => {
@@ -636,7 +663,7 @@ function ensureQuizBox() {
 }
 
 /* =========================
-   13) Render question
+   14) Render question
    ========================= */
 function renderQuestion() {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -661,6 +688,7 @@ function renderQuestion() {
     quizBox.prev.disabled = qIndex === 0;
     quizBox.next.textContent =
       qIndex === questionnaire.questions.length - 1 ? "Terminer →" : "Suivant →";
+    updateProgressUI();
     return;
   }
 
@@ -693,9 +721,7 @@ function renderQuestion() {
       input.id = id;
       input.value = c.value;
 
-      input.checked = isMultiple
-        ? selectedArray.includes(c.value)
-        : c.value === selected;
+      input.checked = isMultiple ? selectedArray.includes(c.value) : c.value === selected;
 
       input.addEventListener("change", () => {
         if (isMultiple) {
@@ -739,16 +765,26 @@ function renderQuestion() {
   quizBox.prev.disabled = qIndex === 0;
   quizBox.next.textContent =
     qIndex === questionnaire.questions.length - 1 ? "Terminer →" : "Suivant →";
+
+  updateProgressUI();
 }
 
 /* =========================
-   14) Récap + Envoi
+   15) Récap + Envoi
    ========================= */
 function renderSummary() {
   commitCurrentTextAnswerIfAny();
 
   const educatorId = select.value;
   const educLabel = badge.textContent;
+
+  // Progress 100% sur le récap
+  if (quizBox?.progressFill) {
+    quizBox.progressText.textContent = "Récapitulatif";
+    quizBox.progressPct.textContent = "100%";
+    quizBox.progressFill.style.width = "100%";
+    if (quizBox.progressTrack) quizBox.progressTrack.setAttribute("aria-valuenow", "100");
+  }
 
   const summary = questionnaire.questions.map((q) => {
     const val = answers[q.id] ?? "";
@@ -852,12 +888,11 @@ function renderSummary() {
 }
 
 /* =========================
-   15) Start (bouton Démarrer)
+   16) Start (bouton Démarrer)
    ========================= */
 btn.addEventListener("click", async () => {
-  // ✅ sécurité : on ne démarre pas tant que le mode n’est pas choisi
   if (!selectedMode) {
-    out.textContent = "Choisis d’abord le type de questionnaire (Famille ou Jeunes).";
+    out.textContent = "Choisissez d’abord le type de questionnaire (Famille ou Jeunes).";
     const ov = ensureModeOverlay();
     if (ov) ov.style.display = "flex";
     disableEducatorStep(true);
@@ -865,7 +900,7 @@ btn.addEventListener("click", async () => {
   }
 
   if (!select.value) {
-    out.textContent = "Merci de choisir ton éducateur avant de continuer.";
+    out.textContent = "Merci de choisir  l'éducateur avant de continuer.";
     return;
   }
 

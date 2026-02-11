@@ -146,3 +146,175 @@ select:focus{
 .iconBtn.is-listening {
   transform: scale(1.08);
 }
+/* =========================
+   PREMIUM+ (Apple-ish + wow)
+   100% CSS, sans casser
+   ========================= */
+
+/* 1) Top bar décorative (façon app premium) */
+.card{
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before{
+  content:"";
+  position:absolute;
+  left:-40%;
+  top:-140px;
+  width: 180%;
+  height: 220px;
+  background:
+    radial-gradient(700px 120px at 18% 60%, rgba(85,168,58,.22), transparent 62%),
+    radial-gradient(500px 120px at 70% 30%, rgba(85,168,58,.14), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,0));
+  transform: rotate(-2deg);
+  pointer-events:none;
+  z-index:0;
+}
+
+.card > *{
+  position: relative;
+  z-index: 1;
+}
+
+/* 2) “Progress” indéterminé premium (discret) en haut de la card */
+.card::after{
+  content:"";
+  position:absolute;
+  left:18px;
+  right:18px;
+  top:14px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(16,24,40,.06);
+  overflow:hidden;
+  z-index: 1;
+}
+
+/* barre animée */
+.card::after{
+  background:
+    linear-gradient(90deg,
+      rgba(16,24,40,.06),
+      rgba(16,24,40,.06)
+    );
+}
+.card::after{
+  /* on crée l’animation avec un “reflet” via background-image */
+  background-image:
+    linear-gradient(90deg,
+      rgba(16,24,40,.06) 0%,
+      rgba(16,24,40,.06) 35%,
+      rgba(85,168,58,.42) 50%,
+      rgba(16,24,40,.06) 65%,
+      rgba(16,24,40,.06) 100%
+    );
+  background-size: 220% 100%;
+  animation: premiumIndeterminate 2.2s ease-in-out infinite;
+}
+
+@keyframes premiumIndeterminate{
+  0%{ background-position: 0% 0; opacity:.85; }
+  50%{ opacity:1; }
+  100%{ background-position: 100% 0; opacity:.85; }
+}
+
+/* 3) Animation d’apparition des contenus (question/choices/récap) */
+#choices, .summaryList, #pdfArea{
+  animation: fadeUp .28s ease both;
+}
+
+@keyframes fadeUp{
+  from{ opacity: 0; transform: translateY(6px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+
+/* 4) Réponses : “sélection” plus visible (sans dépendre d’un JS) */
+/* On stylise le input + label pour rendre la sélection premium */
+.choiceRow input[type="radio"],
+.choiceRow input[type="checkbox"]{
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+/* Quand l’input est coché : on met un glow sur la carte */
+.choiceRow:has(input:checked){
+  border-color: rgba(85,168,58,.40);
+  box-shadow: 0 1px 0 rgba(16,24,40,.04),
+              0 16px 50px rgba(16,24,40,.12);
+  background: linear-gradient(180deg, rgba(85,168,58,.10), rgba(255,255,255,.92));
+}
+
+/* Petit “halo” à droite (chic) */
+.choiceRow:has(input:checked)::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: inherit;
+  pointer-events:none;
+  background: radial-gradient(260px 120px at 88% 50%, rgba(85,168,58,.18), transparent 55%);
+  opacity: .9;
+}
+
+/* Important : rendre .choiceRow positionnée pour son ::after */
+.choiceRow{ position: relative; }
+
+/* 5) Boutons : micro glow au hover (plus premium) */
+.btn:hover{
+  box-shadow:
+    0 1px 0 rgba(16,24,40,.04),
+    0 22px 70px rgba(16,24,40,.14);
+}
+
+/* 6) Pictos : un peu plus “pop” mais soft */
+.qPicto{
+  transform: translateZ(0);
+}
+.qPictoWrap{
+  padding-top: 2px;
+}
+
+/* 7) Accessibilité : réduit les animations si demandé */
+@media (prefers-reduced-motion: reduce){
+  .card::after{ animation: none; }
+  #choices, .summaryList, #pdfArea{ animation: none; }
+  .btn, .choiceRow, .iconBtn{ transition: none; }
+}
+/* =========================
+   PROGRESS BAR ONLY + SPACING
+   -> à coller en bas de src/styles/components.css
+   ========================= */
+
+/* Désactive l’ancienne barre indéterminée si tu l’avais via .card::after */
+.card::after{ content: none !important; }
+
+/* On descend un peu le contenu (évite chevauchement) */
+.card{
+  padding-top: 22px; /* tu peux monter à 26 si besoin */
+}
+
+/* Barre uniquement */
+.progressWrap{
+  margin: 0 0 14px;
+  padding-top: 6px;
+}
+
+.progressTrack{
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(16,24,40,.06);
+  border: 1px solid rgba(16,24,40,.08);
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(16,24,40,.04) inset;
+}
+
+.progressFill{
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(85,168,58,1), rgba(63,143,42,1));
+  box-shadow: 0 10px 20px rgba(85,168,58,.20);
+  transition: width .25s ease;
+}
