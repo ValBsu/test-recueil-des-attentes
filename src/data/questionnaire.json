@@ -23,16 +23,17 @@
   "required": false
 },
     {
-      "id": "q4",
-      "title": "Comment te sens-tu ?",
-      "type": "single",
-      "choices": [
-        { "value": "content", "label": "Je suis content" },
-        { "value": "fatigue", "label": "Je me sens fatigué(e)" },
-        { "value": "colère", "label": "Je suis en colère" },
-        { "value": "triste", "label": "Je me sens triste" }
-      ]
-    },
+  "id": "q4",
+  "title": "Comment te sens-tu ?",
+  "type": "scale",
+  "min": 0,
+  "max": 100,
+  "default": 50,
+  "labels": ["Très mal", "Mal", "Bof", "Bien", "Très bien"],
+  "pictogram": "comment-ca-va.png"
+},
+
+
     {
       "id": "q5",
       "title": "Que fais-tu quand tu es en colère?",
@@ -48,6 +49,7 @@
       "id": "q6",
       "title": "Est ce que tu manges bien au self ?",
       "type": "single",
+      "pictogram" : "coin-repas.png",
       "choices": [
         { "value": "oui", "label": "Oui" },
         { "value": "non", "label": "Non" },
@@ -68,6 +70,7 @@
       "id": "q8",
       "title": "Tu dors bien à la maison?",
       "type": "multiple",
+      "pictogram" : "lit.png",
       "choices": [
         { "value": "oui", "label": "Oui" },
         { "value": "je ne sais pas", "label": "Je ne sais pas" },
@@ -87,6 +90,7 @@
       "id": "q10",
       "title": "est ce que tu vois Mélanie l'infirmière ?",
       "type": "multiple",
+      "pictogram": "infirmiere.png",
       "choices": [
         { "value": "oui", "label": "Oui" },
         { "value": "non", "label": "Non" },

@@ -5,14 +5,96 @@ const badge = document.getElementById("educBadge");
 const btn = document.getElementById("startBtn");
 const out = document.getElementById("out");
 
+// ✅ Dossier de base des pictos (d'après ton arborescence)
+const PICTOS_BASE_PATH = "./src/assets/pictos/";
+
+// ✅ Picto FALC dans le blanc tout à droite de la barre du haut
+const EDUC_FALC_PICTO_FILE = "FALC.jpg"; // ⚠️ respecte la casse exacte (vu dans ton dossier)
+let falcHeaderImg = null;
+
 let questionnaire = null;
 let qIndex = 0;
 let answers = {}; // qId -> value
 let quizBox = null;
 
+/* ------------------- FALC en haut à droite (barre header) ------------------- */
+function findEducPillElement() {
+  // On remonte depuis le badge sur un “conteneur” plausible
+  return (
+    badge.closest(".badge") ||
+    badge.closest(".pill") ||
+    badge.closest(".chip") ||
+    badge.closest(".educBadge") ||
+    badge.parentElement
+  );
+}
+
+function findHeaderContainerFrom(el) {
+  if (!el) return null;
+  return (
+    el.closest("header") ||
+    el.closest(".topbar") ||
+    el.closest(".header") ||
+    el.closest(".appHeader") ||
+    el.parentElement
+  );
+}
+
+function ensureFalcInHeader() {
+  if (falcHeaderImg) return;
+
+  const pillEl = findEducPillElement();
+  const headerEl = findHeaderContainerFrom(pillEl);
+  if (!headerEl) return;
+
+  // Le header doit être le repère pour position:absolute
+  try {
+    const cs = window.getComputedStyle(headerEl);
+    if (cs.position === "static") headerEl.style.position = "relative";
+  } catch (e) {
+    headerEl.style.position = "relative";
+  }
+
+  // Réserver un peu de place à droite pour éviter tout chevauchement
+  // (on n'écrase pas si déjà défini en inline)
+  if (!headerEl.style.paddingRight) headerEl.style.paddingRight = "70px";
+
+  falcHeaderImg = document.createElement("img");
+  falcHeaderImg.id = "falcHeaderImg";
+  falcHeaderImg.alt = "FALC";
+  falcHeaderImg.src = encodeURI(`${PICTOS_BASE_PATH}${EDUC_FALC_PICTO_FILE}`);
+  falcHeaderImg.style.display = "none";
+
+  // ✅ position “tout à droite” dans le blanc
+  falcHeaderImg.style.position = "absolute";
+  falcHeaderImg.style.right = "18px";
+  falcHeaderImg.style.top = "50%";
+  falcHeaderImg.style.transform = "translateY(-50%)";
+
+  // taille correcte (ajustable)
+  falcHeaderImg.style.height = "40px";
+  falcHeaderImg.style.width = "40px";
+  falcHeaderImg.style.objectFit = "contain";
+
+  // si fichier introuvable => on masque (pas de bug visuel)
+  falcHeaderImg.addEventListener("error", () => {
+    falcHeaderImg.style.display = "none";
+  });
+
+  headerEl.appendChild(falcHeaderImg);
+}
+
+function updateFalcHeaderVisibility() {
+  ensureFalcInHeader();
+  if (!falcHeaderImg) return;
+  falcHeaderImg.style.display = select.value ? "block" : "none";
+}
+/* --------------------------------------------------------------------------- */
+
 function updateBadge() {
   const label = select.options[select.selectedIndex]?.textContent;
   badge.textContent = label && label !== "— Sélectionner —" ? label : "à choisir";
+  updateFalcHeaderVisibility();
 }
 
 select.addEventListener("change", updateBadge);
@@ -26,6 +108,111 @@ async function loadQuestionnaire() {
 function getCurrentQuestion() {
   return questionnaire.questions[qIndex];
 }
+
+/* ------------------- PICTOS (sous la question, en haut) ------------------- */
+// ✅ accepte plusieurs noms de clé possibles sans te forcer à modifier ton JSON
+function getQuestionPictoFile(q) {
+  return q?.pictogram || q?.picto || q?.pictogramme || "";
+}
+
+function getPictoSrc(fileName) {
+  if (!fileName) return "";
+  return encodeURI(`${PICTOS_BASE_PATH}${fileName}`);
+}
+
+// ✅ affiche le picto juste sous le titre de la question (au-dessus des réponses)
+function updateQuestionPictoTop(q) {
+  if (!quizBox?.pictoWrap || !quizBox?.pictoImg) return;
+
+  const file = getQuestionPictoFile(q);
+  const src = getPictoSrc(file);
+
+  if (!src) {
+    quizBox.pictoWrap.style.display = "none";
+    quizBox.pictoImg.src = "";
+    return;
+  }
+
+  quizBox.pictoWrap.style.display = "flex";
+  quizBox.pictoImg.src = src;
+  quizBox.pictoImg.alt = q?.title ? `Pictogramme: ${q.title}` : "Pictogramme";
+}
+/* ------------------------------------------------------------------------- */
+
+/* ------------------- SCALE (curseur fluide) ------------------- */
+function renderScaleQuestion(q) {
+  const min = Number.isFinite(q.min) ? q.min : 1;
+  const max = Number.isFinite(q.max) ? q.max : 5;
+
+  // ✅ fluide par défaut
+  const step =
+    q.step !== undefined && q.step !== null && q.step !== ""
+      ? String(q.step)
+      : "any";
+
+  const def = Number.isFinite(q.default) ? q.default : (min + max) / 2;
+
+  const saved = answers[q.id];
+  let value =
+    saved !== undefined && saved !== null && String(saved).trim() !== ""
+      ? Number(saved)
+      : def;
+
+  if (!Number.isFinite(value)) value = def;
+  value = Math.max(min, Math.min(max, value));
+
+  const wrap = document.createElement("div");
+  wrap.className = "scaleWrap";
+
+  // Labels (optionnels, pour le résumé surtout)
+  const labels = Array.isArray(q.labels)
+    ? q.labels
+    : ["Très mal", "Mal", "Bof", "Bien", "Très bien"];
+
+  // Visages au-dessus (emoji simples)
+  const facesDefault = ["😡", "☹️", "😐", "🙂", "😄"];
+  const facesCount = Math.min(5, Math.max(2, labels.length || 5));
+  const faces = facesDefault.slice(0, facesCount);
+
+  const facesRow = document.createElement("div");
+  facesRow.className = "scaleFaces";
+  facesRow.innerHTML = faces
+    .map((f) => `<div class="scaleFace" aria-hidden="true">${f}</div>`)
+    .join("");
+
+  const range = document.createElement("input");
+  range.type = "range";
+  range.min = String(min);
+  range.max = String(max);
+  range.step = step; // ✅ "any" = fluide
+  range.value = String(value);
+  range.className = "scaleRange";
+
+  // Stockage fluide (décimal possible)
+  range.addEventListener("input", () => {
+    const v = Number(range.value);
+    answers[q.id] = Number.isFinite(v) ? v : range.value;
+  });
+
+  // valeur initiale
+  answers[q.id] = Number(range.value);
+
+  // Style local (ne casse pas ton CSS global)
+  const style = document.createElement("style");
+  style.textContent = `
+    .scaleWrap{margin-top:12px}
+    .scaleFaces{display:grid;grid-template-columns:repeat(${facesCount},1fr);gap:10px;margin:6px 0 12px}
+    .scaleFace{font-size:46px;display:flex;justify-content:center;align-items:center}
+    .scaleRange{width:100%; height:36px}
+  `;
+
+  wrap.appendChild(style);
+  wrap.appendChild(facesRow);
+  wrap.appendChild(range);
+
+  quizBox.choices.appendChild(wrap);
+}
+/* ------------------------------------------------------------ */
 
 /* ------------------- AUDIO (lecture) ------------------- */
 function speakFR(text) {
@@ -44,6 +231,8 @@ function speakFR(text) {
 function buildSpeechTextForQuestion(q) {
   const type = q.type || "single";
   if (type === "text") return `${q.title}. Réponse libre.`;
+  if (type === "scale") return `${q.title}. Déplace le curseur.`;
+
   const choices = (q.choices || []).map((c) => c.label).join(". ");
   return choices ? `${q.title}. Choix possibles : ${choices}.` : `${q.title}.`;
 }
@@ -54,7 +243,7 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 
 let recog = null;
 let listening = false;
-let interimBaseValue = ""; // contenu de départ au moment où on lance la dictée
+let interimBaseValue = "";
 
 function getActiveTextArea() {
   return document.querySelector(".textAnswer");
@@ -73,10 +262,9 @@ function setupSpeechRecognitionIfNeeded() {
 
   recog = new SpeechRecognition();
   recog.lang = "fr-FR";
-  recog.interimResults = true; // on affiche pendant qu'il parle
+  recog.interimResults = true;
   recog.continuous = false;
 
-  // ✅ FIX: on remplace l'interim au lieu d'ajouter en boucle
   recog.onresult = (e) => {
     const ta = getActiveTextArea();
     if (!ta) return;
@@ -96,15 +284,10 @@ function setupSpeechRecognitionIfNeeded() {
 
     if (finalText) {
       ta.value = (base + finalText).trim();
-
-      // maj answers
       const q = getCurrentQuestion();
       answers[q.id] = ta.value;
-
-      // on actualise la base (utile si plusieurs segments finaux arrivent)
       interimBaseValue = ta.value.trim();
     } else if (interim) {
-      // provisoire : on affiche sans "coller" définitivement
       ta.value = (base + interim).trim();
     }
   };
@@ -145,15 +328,10 @@ function toggleDictation() {
   if (!listening) {
     try {
       ta.focus();
-
-      // ✅ FIX: on mémorise le texte avant dictée (base)
       interimBaseValue = ta.value.trim();
-
       recog.start();
       setMicUI(true);
-    } catch (e) {
-      // start peut throw si déjà lancé
-    }
+    } catch (e) {}
   } else {
     recog.stop();
     setMicUI(false);
@@ -169,21 +347,41 @@ function ensureQuizBox() {
     <div class="qHeader">
       <h2 id="qTitle"></h2>
 
-      <div class="qActions">
-        <button class="iconBtn" id="speakBtn" type="button" title="Énoncer la question">🔊</button>
-        <button class="iconBtn" id="micBtn" type="button" title="Dicter la réponse">🎤</button>
+      <!-- ✅ Picto juste sous la question (au-dessus des réponses) -->
+      <div id="qPictoWrap" class="qPictoWrap" style="display:none;">
+        <img id="qPicto" class="qPicto" src="" alt="Pictogramme" />
       </div>
     </div>
 
     <div id="choices" class="choices"></div>
 
-    <div class="navRow">
+    <!-- ✅ Nav avec actions centrées entre Précédent et Suivant -->
+    <div class="navRow navRow3">
       <button class="btn secondary" id="prevBtn" type="button">← Précédent</button>
+
+      <div class="centerActions" aria-label="Actions audio et dictée">
+        <button class="iconBtn" id="speakBtn" type="button" title="Énoncer la question">🔊</button>
+        <button class="iconBtn" id="micBtn" type="button" title="Dicter la réponse">🎤</button>
+      </div>
+
       <button class="btn" id="nextBtn" type="button">Suivant →</button>
     </div>
 
     <p id="hint" class="out" aria-live="polite"></p>
   `;
+
+  // ✅ Style local (ne casse pas ton CSS global)
+  // 🔻 MODIF : taille du pictogramme divisée par 2 (140px -> 70px)
+  const style = document.createElement("style");
+  style.textContent = `
+    .qPictoWrap{margin:10px 0 6px; display:flex; justify-content:center}
+    .qPicto{height:70px; width:auto}
+
+    /* nav 3 colonnes : gauche / centre / droite */
+    .navRow3{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .centerActions{display:flex; align-items:center; justify-content:center; gap:10px; min-width:110px}
+  `;
+  card.appendChild(style);
 
   quizBox = {
     card,
@@ -194,7 +392,14 @@ function ensureQuizBox() {
     hint: document.getElementById("hint"),
     speak: document.getElementById("speakBtn"),
     mic: document.getElementById("micBtn"),
+    pictoWrap: document.getElementById("qPictoWrap"),
+    pictoImg: document.getElementById("qPicto"),
   };
+
+  quizBox.pictoImg.addEventListener("error", () => {
+    quizBox.pictoWrap.style.display = "none";
+    quizBox.pictoImg.src = "";
+  });
 
   quizBox.speak.addEventListener("click", () => {
     const q = getCurrentQuestion();
@@ -215,7 +420,7 @@ function ensureQuizBox() {
     const required = q.required !== false;
     const val = answers[q.id];
 
-    if (required && (!val || String(val).trim() === "")) {
+    if (required && (val === undefined || val === null || String(val).trim() === "")) {
       quizBox.hint.textContent = "Réponds pour continuer.";
       return;
     }
@@ -233,7 +438,6 @@ function ensureQuizBox() {
 function renderQuestion() {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
-  // coupe dictée si en cours
   if (recog && listening) {
     try {
       recog.stop();
@@ -243,11 +447,23 @@ function renderQuestion() {
 
   const q = getCurrentQuestion();
   quizBox.title.textContent = q.title;
+
+  // ✅ picto sous la question
+  updateQuestionPictoTop(q);
+
   quizBox.choices.innerHTML = "";
 
   const type = q.type || "single";
 
-  // ---------- QUESTION TEXTE ----------
+  // ✅ slider fluide + visages
+  if (type === "scale") {
+    renderScaleQuestion(q);
+    quizBox.prev.disabled = qIndex === 0;
+    quizBox.next.textContent =
+      qIndex === questionnaire.questions.length - 1 ? "Terminer →" : "Suivant →";
+    return;
+  }
+
   if (type === "text") {
     const textarea = document.createElement("textarea");
     textarea.className = "textAnswer";
@@ -260,10 +476,7 @@ function renderQuestion() {
     });
 
     quizBox.choices.appendChild(textarea);
-  }
-
-  // ---------- QUESTION A CHOIX ----------
-  else {
+  } else {
     const isMultiple = q.type === "multiple";
     const selected = answers[q.id] || (isMultiple ? [] : "");
     const selectedArray = Array.isArray(selected) ? selected : [];
@@ -316,9 +529,33 @@ function renderSummary() {
 
   const summary = questionnaire.questions.map((q) => {
     const val = answers[q.id] ?? "";
+    const type = q.type || "single";
     const isMultiple = q.type === "multiple";
 
-    if ((q.type || "single") === "text") {
+    if (type === "scale") {
+      // Affichage lisible : si labels existent, on approxime vers le plus proche
+      const labels = Array.isArray(q.labels) ? q.labels : null;
+      if (
+        labels &&
+        Number.isFinite(Number(val)) &&
+        Number.isFinite(Number(q.min)) &&
+        Number.isFinite(Number(q.max))
+      ) {
+        const min = Number(q.min);
+        const max = Number(q.max);
+        const n = Number(val);
+
+        const t = (n - min) / (max - min); // 0..1
+        const idx = Math.max(
+          0,
+          Math.min(labels.length - 1, Math.round(t * (labels.length - 1)))
+        );
+        return { question: q.title, answer: labels[idx] };
+      }
+      return { question: q.title, answer: String(val) };
+    }
+
+    if (type === "text") {
       return { question: q.title, answer: String(val) };
     }
 
