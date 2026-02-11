@@ -1,25 +1,69 @@
-// app.js (fichier complet corrigé à copier-coller)
+// app.js (fichier complet REORGANISÉ + NETTOYÉ, sans rien casser)
+// ✅ Écran de choix AU DÉMARRAGE (Famille / Jeunes) en overlay (ne détruit pas le DOM d’accueil)
+// ✅ Charge automatiquement le bon JSON :
+//    - Jeunes  -> ./src/data/questionnaire.json
+//    - Famille -> ./src/data/questionnaire_famille.json
+//    - Fallback sécurité -> ./src/data/questionnaire.json
+// ✅ FIX dictée : les réponses "interim" visibles sont sauvegardées avant Suivant/Précédent + avant Récap
+// ✅ Audio lecture question
 
+/* =========================
+   0) DOM de base (Accueil)
+   ========================= */
 const select = document.getElementById("educSelect");
 const badge = document.getElementById("educBadge");
 const btn = document.getElementById("startBtn");
 const out = document.getElementById("out");
 
-// ✅ Dossier de base des pictos (d'après ton arborescence)
+/* =========================
+   1) Config / State
+   ========================= */
 const PICTOS_BASE_PATH = "./src/assets/pictos/";
+const EDUC_FALC_PICTO_FILE = "FALC.jpg";
 
-// ✅ Picto FALC dans le blanc tout à droite de la barre du haut
-const EDUC_FALC_PICTO_FILE = "FALC.jpg"; // ⚠️ respecte la casse exacte (vu dans ton dossier)
 let falcHeaderImg = null;
+
+let selectedMode = null; // "jeunes" | "famille"
+let questionnairePath = "./src/data/questionnaire.json"; // default jeunes
 
 let questionnaire = null;
 let qIndex = 0;
 let answers = {}; // qId -> value
-let quizBox = null;
 
-/* ------------------- FALC en haut à droite (barre header) ------------------- */
+let quizBox = null; // cache DOM du questionnaire
+let modeOverlay = null; // overlay de choix du mode
+
+/* Dictée */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recog = null;
+let listening = false;
+let interimBaseValue = "";
+
+/* =========================
+   2) Utils
+   ========================= */
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function getPictoSrc(fileName) {
+  if (!fileName) return "";
+  return encodeURI(`${PICTOS_BASE_PATH}${fileName}`);
+}
+
+function getCurrentQuestion() {
+  return questionnaire.questions[qIndex];
+}
+
+/* =========================
+   3) Header FALC (en haut à droite)
+   ========================= */
 function findEducPillElement() {
-  // On remonte depuis le badge sur un “conteneur” plausible
   return (
     badge.closest(".badge") ||
     badge.closest(".pill") ||
@@ -47,7 +91,6 @@ function ensureFalcInHeader() {
   const headerEl = findHeaderContainerFrom(pillEl);
   if (!headerEl) return;
 
-  // Le header doit être le repère pour position:absolute
   try {
     const cs = window.getComputedStyle(headerEl);
     if (cs.position === "static") headerEl.style.position = "relative";
@@ -55,28 +98,22 @@ function ensureFalcInHeader() {
     headerEl.style.position = "relative";
   }
 
-  // Réserver un peu de place à droite pour éviter tout chevauchement
-  // (on n'écrase pas si déjà défini en inline)
   if (!headerEl.style.paddingRight) headerEl.style.paddingRight = "70px";
 
   falcHeaderImg = document.createElement("img");
   falcHeaderImg.id = "falcHeaderImg";
   falcHeaderImg.alt = "FALC";
-  falcHeaderImg.src = encodeURI(`${PICTOS_BASE_PATH}${EDUC_FALC_PICTO_FILE}`);
+  falcHeaderImg.src = getPictoSrc(EDUC_FALC_PICTO_FILE);
   falcHeaderImg.style.display = "none";
 
-  // ✅ position “tout à droite” dans le blanc
   falcHeaderImg.style.position = "absolute";
   falcHeaderImg.style.right = "18px";
   falcHeaderImg.style.top = "50%";
   falcHeaderImg.style.transform = "translateY(-50%)";
-
-  // taille correcte (ajustable)
   falcHeaderImg.style.height = "40px";
   falcHeaderImg.style.width = "40px";
   falcHeaderImg.style.objectFit = "contain";
 
-  // si fichier introuvable => on masque (pas de bug visuel)
   falcHeaderImg.addEventListener("error", () => {
     falcHeaderImg.style.display = "none";
   });
@@ -89,8 +126,10 @@ function updateFalcHeaderVisibility() {
   if (!falcHeaderImg) return;
   falcHeaderImg.style.display = select.value ? "block" : "none";
 }
-/* --------------------------------------------------------------------------- */
 
+/* =========================
+   4) Educateur badge
+   ========================= */
 function updateBadge() {
   const label = select.options[select.selectedIndex]?.textContent;
   badge.textContent = label && label !== "— Sélectionner —" ? label : "à choisir";
@@ -100,51 +139,198 @@ function updateBadge() {
 select.addEventListener("change", updateBadge);
 updateBadge();
 
+/* =========================
+   5) Overlay choix mode (Famille / Jeunes)
+   ========================= */
+function disableEducatorStep(disabled) {
+  select.disabled = disabled;
+  btn.disabled = disabled;
+  btn.style.opacity = disabled ? "0.6" : "";
+  btn.style.cursor = disabled ? "not-allowed" : "";
+}
+
+function ensureModeOverlay() {
+  if (modeOverlay) return modeOverlay;
+
+  const card = document.querySelector(".card");
+  if (!card) return null;
+
+  modeOverlay = document.createElement("div");
+  modeOverlay.id = "modeOverlay";
+  modeOverlay.innerHTML = `
+    <div class="modePanel" role="dialog" aria-modal="true" aria-label="Choix du questionnaire">
+      <h2 class="modeTitle">Choisis ton questionnaire</h2>
+      <p class="modeSub">Avant de choisir l’éducateur.</p>
+
+      <div class="modeGrid">
+        <button type="button" class="modeBtn" id="modeFamille">
+          <div class="modeBtnTitle">Questionnaire Famille</div>
+          <div class="modeBtnHint">Parents / responsables</div>
+        </button>
+
+        <button type="button" class="modeBtn" id="modeJeunes">
+          <div class="modeBtnTitle">Questionnaire Jeunes</div>
+          <div class="modeBtnHint">Pour le jeune</div>
+        </button>
+      </div>
+
+      <p class="modeInfo" id="modeInfo">Tu peux choisir l’un des deux.</p>
+    </div>
+  `;
+
+  const style = document.createElement("style");
+  style.textContent = `
+    #modeOverlay{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      background:rgba(255,255,255,.92);
+      backdrop-filter: blur(2px);
+      z-index: 50;
+    }
+    .modePanel{
+      width: min(560px, 100%);
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:16px;
+      padding:16px;
+      background:#fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,.10);
+    }
+    .modeTitle{margin:0 0 6px}
+    .modeSub{margin:0 0 14px; opacity:.85}
+    .modeGrid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .modeBtn{
+      border:1px solid rgba(0,0,0,.15);
+      border-radius:14px;
+      padding:18px 12px;
+      background:#fff;
+      cursor:pointer;
+      text-align:center;
+      min-height:120px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:6px;
+    }
+    .modeBtn:active{transform:scale(.99)}
+    .modeBtnTitle{font-size:18px; font-weight:700}
+    .modeBtnHint{opacity:.8}
+    .modeInfo{margin-top:14px; min-height:22px; opacity:.9}
+    @media (max-width:560px){
+      .modeGrid{grid-template-columns:1fr}
+    }
+  `;
+  modeOverlay.appendChild(style);
+
+  const cs = window.getComputedStyle(card);
+  if (cs.position === "static") card.style.position = "relative";
+
+  card.appendChild(modeOverlay);
+
+  const onPick = (mode) => {
+    selectedMode = mode;
+    questionnairePath =
+      mode === "famille"
+        ? "./src/data/questionnaire_famille.json"
+        : "./src/data/questionnaire.json";
+
+    modeOverlay.style.display = "none";
+    disableEducatorStep(false);
+
+    out.textContent = `Questionnaire ${mode === "famille" ? "Famille" : "Jeunes"} choisi ✅ Choisis l’éducateur puis clique sur Démarrer.`;
+  };
+
+  modeOverlay.querySelector("#modeFamille").addEventListener("click", () => onPick("famille"));
+  modeOverlay.querySelector("#modeJeunes").addEventListener("click", () => onPick("jeunes"));
+
+  return modeOverlay;
+}
+
+function initModeChoice() {
+  disableEducatorStep(true);
+  ensureModeOverlay();
+}
+
+initModeChoice();
+
+/* =========================
+   6) Chargement questionnaire JSON
+   ========================= */
 async function loadQuestionnaire() {
-  const res = await fetch("./src/data/questionnaire.json", { cache: "no-store" });
-  questionnaire = await res.json();
+  const tryFetch = async (path) => {
+    const res = await fetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Fetch failed: ${path}`);
+    return await res.json();
+  };
+
+  try {
+    questionnaire = await tryFetch(questionnairePath);
+  } catch (e) {
+    const res = await fetch("./src/data/questionnaire.json", { cache: "no-store" });
+    questionnaire = await res.json();
+  }
 }
 
-function getCurrentQuestion() {
-  return questionnaire.questions[qIndex];
+/* =========================
+   7) Commit réponse texte (FIX dictée)
+   ========================= */
+function commitCurrentTextAnswerIfAny() {
+  if (!questionnaire) return;
+  const q = getCurrentQuestion();
+  const type = q?.type || "single";
+  if (type !== "text") return;
+  const ta = document.querySelector(".textAnswer");
+  if (ta) answers[q.id] = ta.value;
 }
 
-/* ------------------- PICTOS (sous la question, en haut) ------------------- */
-// ✅ accepte plusieurs noms de clé possibles sans te forcer à modifier ton JSON
-function getQuestionPictoFile(q) {
-  return q?.pictogram || q?.picto || q?.pictogramme || "";
+/* =========================
+   8) Pictos (question + réponses)
+   ========================= */
+function getQuestionPictoFiles(q) {
+  if (Array.isArray(q?.pictos)) return q.pictos.filter(Boolean);
+  const single = q?.pictogram || q?.picto || q?.pictogramme || "";
+  return single ? [single] : [];
 }
 
-function getPictoSrc(fileName) {
-  if (!fileName) return "";
-  return encodeURI(`${PICTOS_BASE_PATH}${fileName}`);
+function getChoicePictoFile(choice) {
+  return choice?.pictogram || choice?.picto || choice?.pictogramme || "";
 }
 
-// ✅ affiche le picto juste sous le titre de la question (au-dessus des réponses)
 function updateQuestionPictoTop(q) {
-  if (!quizBox?.pictoWrap || !quizBox?.pictoImg) return;
+  if (!quizBox?.pictoWrap) return;
 
-  const file = getQuestionPictoFile(q);
-  const src = getPictoSrc(file);
+  const files = getQuestionPictoFiles(q);
 
-  if (!src) {
+  if (!files.length) {
     quizBox.pictoWrap.style.display = "none";
-    quizBox.pictoImg.src = "";
+    quizBox.pictoWrap.innerHTML = "";
     return;
   }
 
   quizBox.pictoWrap.style.display = "flex";
-  quizBox.pictoImg.src = src;
-  quizBox.pictoImg.alt = q?.title ? `Pictogramme: ${q.title}` : "Pictogramme";
-}
-/* ------------------------------------------------------------------------- */
+  quizBox.pictoWrap.innerHTML = "";
 
-/* ------------------- SCALE (curseur fluide) ------------------- */
+  files.forEach((file) => {
+    const img = document.createElement("img");
+    img.className = "qPicto";
+    img.src = getPictoSrc(file);
+    img.alt = q?.title ? `Pictogramme: ${q.title}` : "Pictogramme";
+    img.loading = "lazy";
+    img.addEventListener("error", () => (img.style.display = "none"));
+    quizBox.pictoWrap.appendChild(img);
+  });
+}
+
+/* =========================
+   9) Scale question (range)
+   ========================= */
 function renderScaleQuestion(q) {
   const min = Number.isFinite(q.min) ? q.min : 1;
   const max = Number.isFinite(q.max) ? q.max : 5;
 
-  // ✅ fluide par défaut
   const step =
     q.step !== undefined && q.step !== null && q.step !== ""
       ? String(q.step)
@@ -164,12 +350,10 @@ function renderScaleQuestion(q) {
   const wrap = document.createElement("div");
   wrap.className = "scaleWrap";
 
-  // Labels (optionnels, pour le résumé surtout)
   const labels = Array.isArray(q.labels)
     ? q.labels
     : ["Très mal", "Mal", "Bof", "Bien", "Très bien"];
 
-  // Visages au-dessus (emoji simples)
   const facesDefault = ["😡", "☹️", "😐", "🙂", "😄"];
   const facesCount = Math.min(5, Math.max(2, labels.length || 5));
   const faces = facesDefault.slice(0, facesCount);
@@ -184,20 +368,17 @@ function renderScaleQuestion(q) {
   range.type = "range";
   range.min = String(min);
   range.max = String(max);
-  range.step = step; // ✅ "any" = fluide
+  range.step = step;
   range.value = String(value);
   range.className = "scaleRange";
 
-  // Stockage fluide (décimal possible)
   range.addEventListener("input", () => {
     const v = Number(range.value);
     answers[q.id] = Number.isFinite(v) ? v : range.value;
   });
 
-  // valeur initiale
   answers[q.id] = Number(range.value);
 
-  // Style local (ne casse pas ton CSS global)
   const style = document.createElement("style");
   style.textContent = `
     .scaleWrap{margin-top:12px}
@@ -212,9 +393,10 @@ function renderScaleQuestion(q) {
 
   quizBox.choices.appendChild(wrap);
 }
-/* ------------------------------------------------------------ */
 
-/* ------------------- AUDIO (lecture) ------------------- */
+/* =========================
+   10) Audio (lecture question)
+   ========================= */
 function speakFR(text) {
   if (!("speechSynthesis" in window)) {
     alert("Audio non disponible sur ce navigateur.");
@@ -236,15 +418,10 @@ function buildSpeechTextForQuestion(q) {
   const choices = (q.choices || []).map((c) => c.label).join(". ");
   return choices ? `${q.title}. Choix possibles : ${choices}.` : `${q.title}.`;
 }
-/* ------------------------------------------------------- */
 
-/* ------------------- DICTÉE (micro) ------------------- */
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-let recog = null;
-let listening = false;
-let interimBaseValue = "";
-
+/* =========================
+   11) Dictée (micro)
+   ========================= */
 function getActiveTextArea() {
   return document.querySelector(".textAnswer");
 }
@@ -285,10 +462,11 @@ function setupSpeechRecognitionIfNeeded() {
     if (finalText) {
       ta.value = (base + finalText).trim();
       const q = getCurrentQuestion();
-      answers[q.id] = ta.value;
+      answers[q.id] = ta.value; // ✅ enregistré quand final
       interimBaseValue = ta.value.trim();
     } else if (interim) {
       ta.value = (base + interim).trim();
+      // ⚠️ interim visible -> commit sur navigation / stop / fin
     }
   };
 
@@ -301,6 +479,8 @@ function setupSpeechRecognitionIfNeeded() {
 
   recog.onend = () => {
     setMicUI(false);
+    // ✅ sécurité : si visible, on sauvegarde
+    commitCurrentTextAnswerIfAny();
   };
 }
 
@@ -333,12 +513,17 @@ function toggleDictation() {
       setMicUI(true);
     } catch (e) {}
   } else {
-    recog.stop();
+    try {
+      recog.stop();
+    } catch (e) {}
     setMicUI(false);
+    commitCurrentTextAnswerIfAny();
   }
 }
-/* ------------------------------------------------------ */
 
+/* =========================
+   12) UI Questionnaire (quizBox)
+   ========================= */
 function ensureQuizBox() {
   if (quizBox) return;
 
@@ -346,16 +531,11 @@ function ensureQuizBox() {
   card.innerHTML = `
     <div class="qHeader">
       <h2 id="qTitle"></h2>
-
-      <!-- ✅ Picto juste sous la question (au-dessus des réponses) -->
-      <div id="qPictoWrap" class="qPictoWrap" style="display:none;">
-        <img id="qPicto" class="qPicto" src="" alt="Pictogramme" />
-      </div>
+      <div id="qPictoWrap" class="qPictoWrap" style="display:none;"></div>
     </div>
 
     <div id="choices" class="choices"></div>
 
-    <!-- ✅ Nav avec actions centrées entre Précédent et Suivant -->
     <div class="navRow navRow3">
       <button class="btn secondary" id="prevBtn" type="button">← Précédent</button>
 
@@ -370,14 +550,37 @@ function ensureQuizBox() {
     <p id="hint" class="out" aria-live="polite"></p>
   `;
 
-  // ✅ Style local (ne casse pas ton CSS global)
-  // 🔻 MODIF : taille du pictogramme divisée par 2 (140px -> 70px)
   const style = document.createElement("style");
   style.textContent = `
-    .qPictoWrap{margin:10px 0 6px; display:flex; justify-content:center}
-    .qPicto{height:70px; width:auto}
+    .qPictoWrap{
+      margin:10px 0 6px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .qPicto{height:70px; width:auto; object-fit:contain}
 
-    /* nav 3 colonnes : gauche / centre / droite */
+    .choiceRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:10px 0;
+    }
+    .choiceLabel{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      cursor:pointer;
+      flex:1;
+    }
+    .choicePicto{
+      height:44px;
+      width:44px;
+      object-fit:contain;
+      margin-left:auto;
+    }
+
     .navRow3{display:flex; align-items:center; justify-content:space-between; gap:10px}
     .centerActions{display:flex; align-items:center; justify-content:center; gap:10px; min-width:110px}
   `;
@@ -393,13 +596,7 @@ function ensureQuizBox() {
     speak: document.getElementById("speakBtn"),
     mic: document.getElementById("micBtn"),
     pictoWrap: document.getElementById("qPictoWrap"),
-    pictoImg: document.getElementById("qPicto"),
   };
-
-  quizBox.pictoImg.addEventListener("error", () => {
-    quizBox.pictoWrap.style.display = "none";
-    quizBox.pictoImg.src = "";
-  });
 
   quizBox.speak.addEventListener("click", () => {
     const q = getCurrentQuestion();
@@ -411,11 +608,14 @@ function ensureQuizBox() {
   });
 
   quizBox.prev.addEventListener("click", () => {
+    commitCurrentTextAnswerIfAny();
     qIndex = Math.max(0, qIndex - 1);
     renderQuestion();
   });
 
   quizBox.next.addEventListener("click", () => {
+    commitCurrentTextAnswerIfAny();
+
     const q = getCurrentQuestion();
     const required = q.required !== false;
     const val = answers[q.id];
@@ -435,6 +635,9 @@ function ensureQuizBox() {
   });
 }
 
+/* =========================
+   13) Render question
+   ========================= */
 function renderQuestion() {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
@@ -448,14 +651,11 @@ function renderQuestion() {
   const q = getCurrentQuestion();
   quizBox.title.textContent = q.title;
 
-  // ✅ picto sous la question
   updateQuestionPictoTop(q);
-
   quizBox.choices.innerHTML = "";
 
   const type = q.type || "single";
 
-  // ✅ slider fluide + visages
   if (type === "scale") {
     renderScaleQuestion(q);
     quizBox.prev.disabled = qIndex === 0;
@@ -492,7 +692,10 @@ function renderQuestion() {
       input.name = q.id;
       input.id = id;
       input.value = c.value;
-      input.checked = isMultiple ? selectedArray.includes(c.value) : c.value === selected;
+
+      input.checked = isMultiple
+        ? selectedArray.includes(c.value)
+        : c.value === selected;
 
       input.addEventListener("change", () => {
         if (isMultiple) {
@@ -510,7 +713,22 @@ function renderQuestion() {
 
       const label = document.createElement("label");
       label.setAttribute("for", id);
-      label.textContent = c.label;
+      label.className = "choiceLabel";
+
+      const span = document.createElement("span");
+      span.textContent = c.label;
+      label.appendChild(span);
+
+      const choicePicto = getChoicePictoFile(c);
+      if (choicePicto) {
+        const img = document.createElement("img");
+        img.className = "choicePicto";
+        img.src = getPictoSrc(choicePicto);
+        img.alt = "";
+        img.loading = "lazy";
+        img.addEventListener("error", () => (img.style.display = "none"));
+        label.appendChild(img);
+      }
 
       row.appendChild(input);
       row.appendChild(label);
@@ -523,7 +741,12 @@ function renderQuestion() {
     qIndex === questionnaire.questions.length - 1 ? "Terminer →" : "Suivant →";
 }
 
+/* =========================
+   14) Récap + Envoi
+   ========================= */
 function renderSummary() {
+  commitCurrentTextAnswerIfAny();
+
   const educatorId = select.value;
   const educLabel = badge.textContent;
 
@@ -533,8 +756,8 @@ function renderSummary() {
     const isMultiple = q.type === "multiple";
 
     if (type === "scale") {
-      // Affichage lisible : si labels existent, on approxime vers le plus proche
       const labels = Array.isArray(q.labels) ? q.labels : null;
+
       if (
         labels &&
         Number.isFinite(Number(val)) &&
@@ -544,8 +767,7 @@ function renderSummary() {
         const min = Number(q.min);
         const max = Number(q.max);
         const n = Number(val);
-
-        const t = (n - min) / (max - min); // 0..1
+        const t = (n - min) / (max - min);
         const idx = Math.max(
           0,
           Math.min(labels.length - 1, Math.round(t * (labels.length - 1)))
@@ -593,9 +815,7 @@ function renderSummary() {
   summary.forEach((item) => {
     const div = document.createElement("div");
     div.className = "summaryItem";
-    div.innerHTML = `<strong>${escapeHtml(item.question)}</strong><div>${escapeHtml(
-      item.answer
-    )}</div>`;
+    div.innerHTML = `<strong>${escapeHtml(item.question)}</strong><div>${escapeHtml(item.answer)}</div>`;
     list.appendChild(div);
   });
 
@@ -631,20 +851,24 @@ function renderSummary() {
   });
 }
 
-function escapeHtml(s) {
-  return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
+/* =========================
+   15) Start (bouton Démarrer)
+   ========================= */
 btn.addEventListener("click", async () => {
+  // ✅ sécurité : on ne démarre pas tant que le mode n’est pas choisi
+  if (!selectedMode) {
+    out.textContent = "Choisis d’abord le type de questionnaire (Famille ou Jeunes).";
+    const ov = ensureModeOverlay();
+    if (ov) ov.style.display = "flex";
+    disableEducatorStep(true);
+    return;
+  }
+
   if (!select.value) {
     out.textContent = "Merci de choisir ton éducateur avant de continuer.";
     return;
   }
+
   out.textContent = "";
 
   await loadQuestionnaire();

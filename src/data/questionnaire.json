@@ -39,11 +39,12 @@
       "title": "Que fais-tu quand tu es en colère?",
       "type": "single",
       "choices": [
-        { "value": "aide", "label": "Je demande de l’aide à un éducateur" },
-        { "value": "fache", "label": "Je crie, tape, insulte" },
-        { "value": "calme", "label": "Je respire pour me calmer" },
-        { "value": "jeter", "label": "Je jète des objets" }
-      ]
+        { "value": "aide", "label": "Je demande de l’aide à un éducateur", "pictogram": "aider.png" },
+        { "value": "fache", "label": "Je crie, tape, insulte", "pictogram": "15463_300.png" },
+        { "value": "calme", "label": "Je respire pour me calmer", "pictogram": "respirer.png" },
+        { "value": "jeter", "label": "Je jète des objets", "pictogram": "casser.png" }
+      ],
+      "pictogram": "colere.png"
     },
     {
       "id": "q6",
@@ -51,9 +52,9 @@
       "type": "single",
       "pictogram" : "coin-repas.png",
       "choices": [
-        { "value": "oui", "label": "Oui" },
-        { "value": "non", "label": "Non" },
-        { "value": "ne sais pas", "label": "Je ne sais pas" }
+        { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
+        { "value": "non", "label": "Non", "pictogram": "non.png" },
+        { "value": "ne sais pas", "label": "Je ne sais pas", "pictogram": "jenesaispas.png" }
       ]
     },
     {
@@ -61,10 +62,11 @@
         "title" : "A la maison tu manges bien ?",
         "type" : "multiple",
         "choices" : [
-            { "value" : "oui", "label" : "Oui" },
-            { "value" : "non", "label" : "Non" },
-            { "value" : "je ne sais pas", "label" : "Je ne sais pas" }
-        ]
+            { "value" : "oui", "label" : "Oui", "pictogram": "bien.png" },
+            { "value" : "non", "label" : "Non", "pictogram": "non.png" },
+            { "value" : "je ne sais pas", "label" : "Je ne sais pas", "pictogram": "jenesaispas.png" }
+        ],
+        "pictogram" : "coin-repas.png"
     },
     {
       "id": "q8",
@@ -72,9 +74,9 @@
       "type": "multiple",
       "pictogram" : "lit.png",
       "choices": [
-        { "value": "oui", "label": "Oui" },
-        { "value": "je ne sais pas", "label": "Je ne sais pas" },
-        { "value": "Non", "label": "Non" }
+        { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
+        { "value": "non", "label": "Non", "pictogram": "non.png" },
+        { "value": "je ne sais pas", "label": "Je ne sais pas", "pictogram": "jenesaispas.png" }
       ]
     },
     {
@@ -82,19 +84,20 @@
       "title": "Est ce que tu as de la psychomotricité avec Mathilde ?",
       "type": "single",
       "choices": [
-        { "value": "oui", "label": "Oui" },
-        { "value": "non", "label": "Non" }
-      ]
+        { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
+        { "value": "non", "label": "Non", "pictogram": "non.png" }
+      ],
+      "pictogram": "psychomotricite.png"
     },  
     {
       "id": "q10",
       "title": "est ce que tu vois Mélanie l'infirmière ?",
       "type": "multiple",
-      "pictogram": "infirmiere.png",
+      "pictogram": "infirmerie.png",
       "choices": [
-        { "value": "oui", "label": "Oui" },
-        { "value": "non", "label": "Non" },
-        { "value": "je ne sais pas", "label": "Je ne sais pas" }
+        { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
+        { "value": "non", "label": "Non", "pictogram": "non.png" },
+        { "value": "je ne sais pas", "label": "Je ne sais pas", "pictogram": "jenesaispas.png" }
       ]
     },
     {
@@ -114,9 +117,10 @@
       "title" : "Tu as des copains à l'IME ?",
       "type": "single",
       "choices": [
-        { "value": "oui", "label": "Oui" },
-        { "value": "non", "label": "Non" }
-      ]
+        { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
+        { "value": "non", "label": "Non", "pictogram": "non.png" }  
+      ],
+      "pictogram": "amis.png"
     
     },
 
@@ -125,19 +129,20 @@
       "title" : "Tu fais du sport à l'IME ?",
       "type": "single",
       "choices": [
-        { "value": "oui", "label": "Oui" },
-        { "value": "non", "label": "Non" }
-      ]
+        { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
+        { "value": "non", "label": "Non", "pictogram": "non.png" }
+      ],
+      "pictogram": "sport.png"
     },
     {
       "id" : "q14",
       "title" : "Fais tu du sport en dehors de l'IME ?",
       "type": "single",
       "choices": [
-        { "value": "oui", "label": "Oui" },
-        { "value": "pole3", "label": "Oui au Pôle 3 avec Théo" },
-        { "value": "club", "label": "Oui dans un club de sport" },
-        { "value": "non", "label": "Non" }
+        { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
+        { "value": "pole3", "label": "Oui au Pôle 3 avec Théo", "pictogram": "pole3.png" },
+        { "value": "club", "label": "Oui dans un club de sport", "pictogram": "club.png" },
+        { "value": "non", "label": "Non", "pictogram": "non.png" }
       ]
     },
     {
@@ -145,10 +150,11 @@
       "title" : "Ton emploi du temps de plait, tu le trouve comment ?",
       "type": "single",
       "choices": [
-        { "value": "super", "label": "Super bien" },
-        { "value": "bien", "label": "Bien" },
-        { "value": "je n'aime pas", "label": "Pas bien" }
-      ]
+        { "value": "super", "label": "Super bien", "pictogram": "super.png" },
+        { "value": "bien", "label": "Bien", "pictogram": "bien.png" },
+        { "value": "je n'aime pas", "label": "Pas bien", "pictogram": "non.png" }
+      ],
+      "pictogram": "semaine.png"
     },
     {
       "id" : "q16",

@@ -1,0 +1,12 @@
+{
+  "title": "Recueil des attentes famille",
+  "questions": [
+    {
+  "id": "q_open_1",
+  "type": "text",
+  "title": "Nom de famille de l'enfant ?",
+  "placeholder": "Tu peux écrire ici…",
+  "required": false
+}
+    ]
+    }   
