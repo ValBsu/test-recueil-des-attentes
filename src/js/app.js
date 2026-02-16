@@ -4,17 +4,27 @@
 // ✅ FIX dictée : les réponses "interim" visibles sont sauvegardées avant navigation + récap
 // ✅ Audio lecture question
 // ✅ Progression réelle : "Question X/Y" + "%"
+// ✅ NOUVEAU : Groupes en cards + survol/focus = énonce le groupe
+// ✅ Trombinoscope éducateurs par groupe (photo générique) sans casser le flux existant
 
 const select = document.getElementById("educSelect");
 const badge = document.getElementById("educBadge");
 const btn = document.getElementById("startBtn");
 const out = document.getElementById("out");
 
+// Groupes + éducateurs UI
+const groupSelect = document.getElementById("groupSelect"); // conservé (caché)
+const groupGrid = document.getElementById("groupGrid");
+const educGrid = document.getElementById("educGrid");
+
 /* =========================
    1) Config / State
    ========================= */
 const PICTOS_BASE_PATH = "./src/assets/pictos/";
 const EDUC_FALC_PICTO_FILE = "FALC.jpg";
+
+// Photo générique temporaire (mets ce fichier où tu veux)
+const DEFAULT_EDUC_PHOTO = "./src/assets/avatar.png";
 
 let falcHeaderImg = null;
 
@@ -33,6 +43,49 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 let recog = null;
 let listening = false;
 let interimBaseValue = "";
+
+/* =========================
+   1bis) Données éducateurs (Numbers)
+   ========================= */
+const EDUCATORS = [
+  // Pôle accueil
+  { name: "Alexis Plessis", role: "Éducateur spécialisé", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "alexis" },
+  { name: "Morgan Dehaies", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "morgane" }, // compat ancien select
+  { name: "Camille Rouillé", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "camille" },
+  { name: "Marina", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "marina" },
+  { name: "Lucile Charrier", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "lucile" },
+
+  // Pôle projet
+  { name: "Pauline Martin", role: "Éducatrice spécialisée", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "pauline-martin" },
+  { name: "Marine Toureau", role: "Monitrice éducatrice", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "marine-toureau" },
+  { name: "Wilfried Tijou", role: "Éducateur technique", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "wilfried-tijou" },
+  { name: "Maud Février", role: "Monitrice éducatrice", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "maud-fevrier" },
+  { name: "Nadège Rétif", role: "Éducatrice spécialisée", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "nadege-retif" },
+  { name: "Nicolas Marmin", role: "Éducateur spécialisé", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "nicolas-marmin" },
+
+  // Pôle sortie
+  { name: "Karen Goujon", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "karen-goujon" },
+  { name: "Damien Chautard", role: "Éducateur technique", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "damien-chautard" },
+  { name: "Céline", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "celine" },
+  { name: "Josélita", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "joselita" },
+  { name: "Marie Boré", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "marie-bore" },
+
+  // Unité transversale
+  { name: "Pascal Bochard", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "pascal-bochard" },
+  { name: "Julien Fabre", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "julien-fabre" },
+  { name: "Chloé Galand", role: "Éducatrice spécialisée", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "chloe-galand" },
+  { name: "Audrey Morille", role: "Éducatrice spécialisée", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "audrey-morille" },
+  { name: "Claire Constanty", role: "Monitrice éducatrice", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "claire-constanty" },
+
+  // Unité spécifique
+  { name: "Matthieu Rivron", role: "Éducateur spécialisé", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "matthieu" },
+  { name: "Noémie Rat", role: "Éducatrice spécialisée", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "noemie-rat" },
+  { name: "Juliette Rouseau", role: "Monitrice éducatrice", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "juliette-rouseau" },
+  { name: "Justine", role: "Monitrice éducatrice", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "justine" },
+  { name: "Valentin Bésiau", role: "Moniteur éducateur", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "valentin" },
+];
+
+const GROUPS = Array.from(new Set(EDUCATORS.map(e => e.group)));
 
 /* =========================
    2) Utils
@@ -54,6 +107,68 @@ function getPictoSrc(fileName) {
 function getCurrentQuestion() {
   return questionnaire.questions[qIndex];
 }
+
+function normalizeId(s) {
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+/* =========================
+   2bis) Styles UI (cards)
+   ========================= */
+(function injectCardStyles() {
+  const style = document.createElement("style");
+  style.textContent = `
+    .group-grid, .educ-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+      gap:12px;
+      margin-top:8px;
+    }
+
+    .group-card, .educ-card{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:14px;
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:16px;
+      background:#fff;
+      cursor:pointer;
+      text-align:left;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+    }
+    .group-card:active, .educ-card:active{transform:scale(.995)}
+    .group-card.is-selected, .educ-card.is-selected{outline:3px solid rgba(0,0,0,.22)}
+
+    .group-badge{
+      width:42px;height:42px;
+      border-radius:12px;
+      background:rgba(0,0,0,.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      flex:0 0 auto;
+    }
+    .group-name{font-weight:900}
+
+    .educ-photo{
+      width:56px;height:56px;
+      border-radius:50%;
+      object-fit:cover;
+      background:rgba(0,0,0,.06);
+      flex:0 0 auto;
+    }
+    .educ-name{font-weight:900}
+    .educ-role{opacity:.85}
+  `;
+  document.head.appendChild(style);
+})();
 
 /* =========================
    3) Header FALC (en haut à droite)
@@ -125,6 +240,16 @@ function updateFalcHeaderVisibility() {
 /* =========================
    4) Educateur badge
    ========================= */
+function ensureSelectHasOption(value, label) {
+  const exists = Array.from(select.options).some(opt => opt.value === value);
+  if (exists) return;
+
+  const opt = document.createElement("option");
+  opt.value = value;
+  opt.textContent = label;
+  select.appendChild(opt);
+}
+
 function updateBadge() {
   const label = select.options[select.selectedIndex]?.textContent;
   badge.textContent = label && label !== "— Sélectionner —" ? label : "à choisir";
@@ -135,13 +260,150 @@ select.addEventListener("change", updateBadge);
 updateBadge();
 
 /* =========================
+   4bis) Flow Groupe + Éducateurs
+   ========================= */
+function setStartEnabled(enabled) {
+  btn.disabled = !enabled;
+  btn.style.opacity = enabled ? "" : "0.6";
+  btn.style.cursor = enabled ? "" : "not-allowed";
+}
+
+function clearEducatorSelection() {
+  select.value = "";
+  updateBadge();
+  setStartEnabled(false);
+  if (educGrid) educGrid.querySelectorAll(".educ-card").forEach(el => el.classList.remove("is-selected"));
+}
+
+function populateGroupsSelect() {
+  if (!groupSelect) return;
+  groupSelect.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
+  GROUPS.forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = g;
+    groupSelect.appendChild(opt);
+  });
+}
+
+/* --- Audio sur survol groupe --- */
+let lastSpokenGroup = "";
+let speakTimer = null;
+
+function speakGroupName(name) {
+  if (!name) return;
+  if (!("speechSynthesis" in window)) return;
+
+  window.clearTimeout(speakTimer);
+  speakTimer = window.setTimeout(() => {
+    if (name === lastSpokenGroup) return;
+    lastSpokenGroup = name;
+
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(name);
+    u.lang = "fr-FR";
+    u.rate = 0.95;
+    u.pitch = 0.9;
+    window.speechSynthesis.speak(u);
+  }, 120);
+}
+
+function renderEducatorsForGroup(group) {
+  if (!educGrid) return;
+  educGrid.innerHTML = "";
+
+  const list = EDUCATORS.filter(e => e.group === group);
+  if (!list.length) return;
+
+  list.forEach(e => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "educ-card";
+    card.setAttribute("aria-label", `${e.name}, ${e.role}`);
+
+    card.innerHTML = `
+      <img class="educ-photo" src="${e.photo}" alt="" loading="lazy" />
+      <div>
+        <div class="educ-name">${escapeHtml(e.name)}</div>
+        <div class="educ-role">${escapeHtml(e.role)}</div>
+      </div>
+    `;
+
+    card.addEventListener("click", () => {
+      const id = e.id || normalizeId(e.name);
+      ensureSelectHasOption(id, e.name);
+
+      select.value = id;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+
+      educGrid.querySelectorAll(".educ-card").forEach(el => el.classList.remove("is-selected"));
+      card.classList.add("is-selected");
+
+      // autorise la suite
+      setStartEnabled(true);
+      out.textContent = "";
+    });
+
+    educGrid.appendChild(card);
+  });
+}
+
+function renderGroupCards(enabled) {
+  if (!groupGrid) return;
+
+  groupGrid.innerHTML = "";
+
+  GROUPS.forEach(g => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "group-card";
+    card.disabled = !enabled;
+    card.style.opacity = enabled ? "" : "0.55";
+    card.style.cursor = enabled ? "" : "not-allowed";
+    card.setAttribute("aria-label", `Groupe : ${g}`);
+
+    card.innerHTML = `
+      <div class="group-badge" aria-hidden="true">🏷️</div>
+      <div class="group-name">${escapeHtml(g)}</div>
+    `;
+
+    // Survol souris + focus clavier => énonce
+    card.addEventListener("mouseenter", () => enabled && speakGroupName(g));
+    card.addEventListener("focus", () => enabled && speakGroupName(g));
+
+    // Clic => sélection + affichage éducateurs
+    card.addEventListener("click", () => {
+      if (!enabled) return;
+
+      // sync select caché
+      if (groupSelect) groupSelect.value = g;
+
+      // highlight groupe
+      groupGrid.querySelectorAll(".group-card").forEach(el => el.classList.remove("is-selected"));
+      card.classList.add("is-selected");
+
+      // reset éducateur + render
+      clearEducatorSelection();
+      renderEducatorsForGroup(g);
+    });
+
+    groupGrid.appendChild(card);
+  });
+}
+
+// Init UI (avant overlay)
+populateGroupsSelect();
+renderGroupCards(false);
+setStartEnabled(false);
+
+/* =========================
    5) Overlay choix mode (Famille / Jeunes)
    ========================= */
 function disableEducatorStep(disabled) {
+  // select éducateur (caché) : sécurité
   select.disabled = disabled;
-  btn.disabled = disabled;
-  btn.style.opacity = disabled ? "0.6" : "";
-  btn.style.cursor = disabled ? "not-allowed" : "";
+  // bouton : interdit tant que mode non choisi / éducateur non choisi
+  if (disabled) setStartEnabled(false);
 }
 
 function ensureModeOverlay() {
@@ -155,7 +417,6 @@ function ensureModeOverlay() {
   modeOverlay.innerHTML = `
     <div class="modePanel" role="dialog" aria-modal="true" aria-label="Choix du questionnaire">
       <h2 class="modeTitle">Choisis ton questionnaire</h2>
-      <p class="modeSub">Avant de choisir l’éducateur.</p>
 
       <div class="modeGrid">
         <button type="button" class="modeBtn" id="modeFamille">
@@ -168,8 +429,6 @@ function ensureModeOverlay() {
           <div class="modeBtnHint">Pour le jeune</div>
         </button>
       </div>
-
-      <p class="modeInfo" id="modeInfo">Tu peux choisir l’un des deux.</p>
     </div>
   `;
 
@@ -194,8 +453,7 @@ function ensureModeOverlay() {
       background:#fff;
       box-shadow: 0 10px 30px rgba(0,0,0,.10);
     }
-    .modeTitle{margin:0 0 6px}
-    .modeSub{margin:0 0 14px; opacity:.85}
+    .modeTitle{margin:0 0 14px}
     .modeGrid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
     .modeBtn{
       border:1px solid rgba(0,0,0,.15);
@@ -211,9 +469,8 @@ function ensureModeOverlay() {
       gap:6px;
     }
     .modeBtn:active{transform:scale(.99)}
-    .modeBtnTitle{font-size:18px; font-weight:700}
+    .modeBtnTitle{font-size:18px; font-weight:800}
     .modeBtnHint{opacity:.8}
-    .modeInfo{margin-top:14px; min-height:22px; opacity:.9}
     @media (max-width:560px){
       .modeGrid{grid-template-columns:1fr}
     }
@@ -222,7 +479,6 @@ function ensureModeOverlay() {
 
   const cs = window.getComputedStyle(card);
   if (cs.position === "static") card.style.position = "relative";
-
   card.appendChild(modeOverlay);
 
   const onPick = (mode) => {
@@ -235,7 +491,15 @@ function ensureModeOverlay() {
     modeOverlay.style.display = "none";
     disableEducatorStep(false);
 
-    out.textContent = `Questionnaire ${mode === "famille" ? "Famille" : "Jeunes"} choisi ✅ Choisis l’éducateur puis clique sur Démarrer.`;
+    // Active les cards groupes
+    renderGroupCards(true);
+
+    // reset selection
+    clearEducatorSelection();
+    out.textContent = "";
+
+    // stop toute synthèse en cours
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   };
 
   modeOverlay.querySelector("#modeFamille").addEventListener("click", () => onPick("famille"));
@@ -669,9 +933,7 @@ function renderQuestion() {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
   if (recog && listening) {
-    try {
-      recog.stop();
-    } catch (e) {}
+    try { recog.stop(); } catch (e) {}
     setMicUI(false);
   }
 
@@ -778,7 +1040,6 @@ function renderSummary() {
   const educatorId = select.value;
   const educLabel = badge.textContent;
 
-  // Progress 100% sur le récap
   if (quizBox?.progressFill) {
     quizBox.progressText.textContent = "Récapitulatif";
     quizBox.progressPct.textContent = "100%";
@@ -888,7 +1149,7 @@ function renderSummary() {
 }
 
 /* =========================
-   16) Start (bouton Démarrer)
+   16) Start (bouton Continuer)
    ========================= */
 btn.addEventListener("click", async () => {
   if (!selectedMode) {
@@ -900,7 +1161,7 @@ btn.addEventListener("click", async () => {
   }
 
   if (!select.value) {
-    out.textContent = "Merci de choisir  l'éducateur avant de continuer.";
+    out.textContent = "Merci de choisir l’éducateur avant de continuer.";
     return;
   }
 

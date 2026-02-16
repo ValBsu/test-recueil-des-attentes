@@ -18,8 +18,8 @@
     <div class="top-inner">
       <div class="brand">
         <div class="logo">
-  <img src="./logo-adapei.png" alt="Adapei 49" />
-</div>
+          <img src="./logo-adapei.png" alt="Adapei 49" />
+        </div>
 
         <div>
           <h1>Recueil des attentes</h1>
@@ -35,11 +35,25 @@
 
   <main id="main" class="main" tabindex="-1">
     <section class="card">
-      <h2>Démarrer le questionnaire</h2>
+      <h2>Choisir le groupe</h2>
 
-      <div class="field">
+      <!-- On garde le select pour compat/sécurité (caché) -->
+      <select id="groupSelect" disabled style="display:none;">
+        <option value="">— Choisir un groupe —</option>
+      </select>
+
+      <!-- Groupes en cards -->
+      <div id="groupGrid" class="group-grid" aria-label="Liste des groupes"></div>
+
+      <div style="height:14px"></div>
+
+      <!-- Éducateurs en cards -->
+      <div id="educGrid" class="educ-grid" aria-live="polite"></div>
+
+      <!-- On garde ton ancien select pour compat (caché) -->
+      <div class="field" style="display:none;">
         <label for="educSelect">Choisis ton éducateur référent</label>
-        <select id="educSelect" aria-describedby="educHelp">
+        <select id="educSelect">
           <option value="">— Sélectionner —</option>
           <option value="valentin">Valentin</option>
           <option value="alexis">Alexis</option>
@@ -49,21 +63,15 @@
           <option value="marina">Marina</option>
           <option value="lucile">Lucile</option>
         </select>
-        <p id="educHelp" class="help">
-          Cette information permet d’envoyer le questionnaire au bon professionnel.
-        </p>
       </div>
 
-      <button class="btn" type="button" id="startBtn">
-        Continuer
-      </button>
+      <button class="btn" type="button" id="startBtn">Continuer</button>
 
       <p id="out" class="out" aria-live="polite"></p>
     </section>
   </main>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="./src/js/app.js"></script>
-
+  <script src="./src/js/app.js"></script>
 </body>
 </html>
