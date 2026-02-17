@@ -84,12 +84,12 @@ const EDUCATORS = [
   // Pôle sortie
   { name: "Karen Goujon", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "karen-goujon" },
   { name: "Damien Chautard", role: "Éducateur technique", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "damien-chautard" },
-  { name: "Céline", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "celine" },
-  { name: "Josélita", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "joselita" },
+  { name: "Céline Mottais", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "celine" },
+  { name: "Josélita Martot", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "joselita" },
   { name: "Marie Boré", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "marie-bore" },
 
   // Unité transversale
-  { name: "Pascal Bochard", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "pascal-bochard" },
+  { name: "Pascal Rochard", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "pascal-bochard" },
   { name: "Julien Fabre", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "julien-fabre" },
   { name: "Chloé Galand", role: "Éducatrice spécialisée", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "chloe-galand" },
   { name: "Audrey Morille", role: "Éducatrice spécialisée", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "audrey-morille" },
