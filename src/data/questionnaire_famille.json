@@ -7,6 +7,13 @@
   "title": "Nom de famille de l'enfant ?",
   "placeholder": "Tu peux écrire ici…",
   "required": false
+},
+{
+  "id": "q_open_2",
+  "type": "text",
+  "title": "Prénom de famille de l'enfant ?",
+  "placeholder": "Tu peux écrire ici…",
+  "required": false
 }
     ]
     }   
