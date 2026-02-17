@@ -35,39 +35,46 @@
 
   <main id="main" class="main" tabindex="-1">
     <section class="card">
-      <h2>Choisir le groupe</h2>
 
-      <!-- On garde le select pour compat/sécurité (caché) -->
-      <select id="groupSelect" disabled style="display:none;">
-        <option value="">— Choisir un groupe —</option>
-      </select>
+      <!-- STEP 1 : Pôles -->
+      <div id="poleStep">
+        <h2>Choisir le pôle</h2>
 
-      <!-- Groupes en cards -->
-      <div id="groupGrid" class="group-grid" aria-label="Liste des groupes"></div>
-
-      <div style="height:14px"></div>
-
-      <!-- Éducateurs en cards -->
-      <div id="educGrid" class="educ-grid" aria-live="polite"></div>
-
-      <!-- On garde ton ancien select pour compat (caché) -->
-      <div class="field" style="display:none;">
-        <label for="educSelect">Choisis ton éducateur référent</label>
-        <select id="educSelect">
-          <option value="">— Sélectionner —</option>
-          <option value="valentin">Valentin</option>
-          <option value="alexis">Alexis</option>
-          <option value="matthieu">Matthieu</option>
-          <option value="camille">Camille</option>
-          <option value="morgane">El Mustache</option>
-          <option value="marina">Marina</option>
-          <option value="lucile">Lucile</option>
+        <!-- On garde le select pour compat/sécurité (caché) -->
+        <select id="groupSelect" disabled style="display:none;">
+          <option value="">— Choisir un groupe —</option>
         </select>
+
+        <!-- Groupes en cards -->
+        <div id="groupGrid" class="group-grid" aria-label="Liste des pôles"></div>
+
+        <button class="btn" type="button" id="startBtn">Continuer</button>
+        <p id="out" class="out" aria-live="polite"></p>
       </div>
 
-      <button class="btn" type="button" id="startBtn">Continuer</button>
+      <!-- STEP 2 : Éducateurs -->
+      <div id="educStep" style="display:none;">
+        <h2>Choisir le professionnel</h2>
 
-      <p id="out" class="out" aria-live="polite"></p>
+        <!-- Éducateurs en cards -->
+        <div id="educGrid" class="educ-grid" aria-live="polite"></div>
+
+        <!-- Select historique conservé (compat), caché -->
+        <div class="field" style="display:none;">
+          <label for="educSelect">Choisis ton éducateur référent</label>
+          <select id="educSelect">
+            <option value="">— Sélectionner —</option>
+          </select>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+          <button class="btn secondary" type="button" id="backToPolesBtn">← Retour</button>
+          <button class="btn" type="button" id="continueAfterEducBtn">Continuer</button>
+        </div>
+
+        <p id="educOut" class="out" aria-live="polite"></p>
+      </div>
+
     </section>
   </main>
 

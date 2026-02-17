@@ -1,18 +1,30 @@
 // app.js (fichier complet REORGANISÉ + PREMIUM progress réel)
-// ✅ Choix AU DÉMARRAGE (Famille / Jeunes) en overlay (ne détruit pas le DOM d’accueil)
-// ✅ Charge automatiquement le bon JSON (famille/jeunes) + fallback sécurité
+// ✅ Choix AU DÉMARRAGE en overlay : tous les questionnaires (sans scroll)
+// ✅ Après choix questionnaire -> écran pôles uniquement
+// ✅ Après choix pôle -> écran pros
+// ✅ Survol/focus cards = énoncé audio (TNI friendly)
+// ✅ Charge automatiquement le bon JSON + fallback sécurité
 // ✅ FIX dictée : les réponses "interim" visibles sont sauvegardées avant navigation + récap
 // ✅ Audio lecture question
 // ✅ Progression réelle : "Question X/Y" + "%"
-// ✅ NOUVEAU : Groupes en cards + survol/focus = énonce le groupe
-// ✅ Trombinoscope éducateurs par groupe (photo générique) sans casser le flux existant
+// ✅ Récap : chrono temps réel passé + rendu avec pictos (si présents)
+// ✅ Rien cassé : envoi netlify/functions/submit conservé
 
 const select = document.getElementById("educSelect");
 const badge = document.getElementById("educBadge");
-const btn = document.getElementById("startBtn");
+
+// Boutons / sorties
+const btnPoleContinue = document.getElementById("startBtn"); // bouton dans poleStep
 const out = document.getElementById("out");
 
-// Groupes + éducateurs UI
+// Étapes (HTML 2 steps)
+const poleStep = document.getElementById("poleStep");
+const educStep = document.getElementById("educStep");
+const backToPolesBtn = document.getElementById("backToPolesBtn");
+const btnEducContinue = document.getElementById("continueAfterEducBtn");
+const educOut = document.getElementById("educOut");
+
+// UI pôles/pros
 const groupSelect = document.getElementById("groupSelect"); // conservé (caché)
 const groupGrid = document.getElementById("groupGrid");
 const educGrid = document.getElementById("educGrid");
@@ -22,21 +34,27 @@ const educGrid = document.getElementById("educGrid");
    ========================= */
 const PICTOS_BASE_PATH = "./src/assets/pictos/";
 const EDUC_FALC_PICTO_FILE = "FALC.jpg";
-
-// Photo générique temporaire (mets ce fichier où tu veux)
 const DEFAULT_EDUC_PHOTO = "./src/assets/avatar.png";
 
 let falcHeaderImg = null;
 
-let selectedMode = null; // "jeunes" | "famille"
-let questionnairePath = "./src/data/questionnaire.json"; // default jeunes
+// Questionnaire choisi (clé)
+let selectedQuestionnaireKey = null;
+// Si l’overlay impose un pôle (ex: "Pôle accueil"), on le stocke ici
+let fixedPoleFromOverlay = "";
+let selectedPole = ""; // pôle choisi
 
+let questionnairePath = "./src/data/questionnaire.json"; // fallback
 let questionnaire = null;
 let qIndex = 0;
 let answers = {}; // qId -> value
 
-let quizBox = null; // cache DOM du questionnaire
-let modeOverlay = null; // overlay de choix du mode
+let quizBox = null;
+let modeOverlay = null;
+
+/* Chrono */
+let chronoStartMs = 0;
+let chronoEndMs = 0;
 
 /* Dictée */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -45,12 +63,12 @@ let listening = false;
 let interimBaseValue = "";
 
 /* =========================
-   1bis) Données éducateurs (Numbers)
+   1bis) Données éducateurs
    ========================= */
 const EDUCATORS = [
   // Pôle accueil
   { name: "Alexis Plessis", role: "Éducateur spécialisé", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "alexis" },
-  { name: "Morgan Dehaies", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "morgane" }, // compat ancien select
+  { name: "Morgan Dehaies", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "morgane" },
   { name: "Camille Rouillé", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "camille" },
   { name: "Marina Trottier", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "marina" },
   { name: "Lucile Charrier", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "lucile" },
@@ -88,6 +106,21 @@ const EDUCATORS = [
 const GROUPS = Array.from(new Set(EDUCATORS.map(e => e.group)));
 
 /* =========================
+   1ter) Liste des questionnaires (OVERLAY)
+   ========================= */
+const QUESTIONNAIRES = [
+  { key: "famille", label: "Questionnaire Famille", hint: "Parents / responsables", icon: "👨‍👩‍👧‍👦", path: "./src/data/questionnaire_famille.json" },
+  { key: "jeunes", label: "Questionnaire Jeunes", hint: "Pour le jeune", icon: "🧒", path: "./src/data/questionnaire.json" },
+
+  { key: "pole_accueil", label: "Pôle accueil", hint: "Questionnaire du pôle", icon: "🏠", path: "./src/data/questionnaire_PA.json", fixedPole: "Pôle accueil" },
+  { key: "pole_projet", label: "Pôle projet", hint: "Questionnaire du pôle", icon: "🧩", path: "./src/data/questionnaire_PP.json", fixedPole: "Pôle projet" },
+  { key: "pole_sortie", label: "Pôle sortie", hint: "Questionnaire du pôle", icon: "🚌", path: "./src/data/questionnaire_PS.json", fixedPole: "Pôle sortie" },
+
+  { key: "unite_transversale", label: "Unité transversale", hint: "Questionnaire unité", icon: "🔄", path: "./src/data/questionnaire_UT.json", fixedPole: "Unité transversale" },
+  { key: "unite_specifique", label: "Unité spécifique", hint: "Questionnaire unité", icon: "🎯", path: "./src/data/questionnaire_US.json", fixedPole: "Unité spécifique" },
+];
+
+/* =========================
    2) Utils
    ========================= */
 function escapeHtml(s) {
@@ -118,19 +151,43 @@ function normalizeId(s) {
 }
 
 /* =========================
-   2bis) Styles UI (cards)
+   2bis) Audio helpers (TNI)
+   ========================= */
+let lastSpokenText = "";
+let speakTimer = null;
+
+function speakGroupName(text) {
+  if (!text) return;
+  if (!("speechSynthesis" in window)) return;
+
+  window.clearTimeout(speakTimer);
+  speakTimer = window.setTimeout(() => {
+    if (text === lastSpokenText) return;
+    lastSpokenText = text;
+
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "fr-FR";
+    u.rate = 0.95;
+    u.pitch = 0.9;
+    window.speechSynthesis.speak(u);
+  }, 120);
+}
+
+/* =========================
+   2ter) Styles UI (cards + overlay sans scroll)
    ========================= */
 (function injectCardStyles() {
   const style = document.createElement("style");
   style.textContent = `
-    .group-grid, .educ-grid{
+    .group-grid, .educ-grid, .qSelectGrid{
       display:grid;
-      grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
       gap:12px;
       margin-top:8px;
     }
 
-    .group-card, .educ-card{
+    .group-card, .educ-card, .qSelectCard{
       display:flex;
       align-items:center;
       gap:12px;
@@ -142,10 +199,11 @@ function normalizeId(s) {
       text-align:left;
       box-shadow: 0 6px 18px rgba(0,0,0,.06);
     }
-    .group-card:active, .educ-card:active{transform:scale(.995)}
+    .group-card:hover, .educ-card:hover, .qSelectCard:hover{ transform: translateY(-1px); }
+    .group-card:active, .educ-card:active, .qSelectCard:active{transform:scale(.995)}
     .group-card.is-selected, .educ-card.is-selected{outline:3px solid rgba(0,0,0,.22)}
 
-    .group-badge{
+    .group-badge, .qSelectBadge{
       width:42px;height:42px;
       border-radius:12px;
       background:rgba(0,0,0,.06);
@@ -166,12 +224,93 @@ function normalizeId(s) {
     }
     .educ-name{font-weight:900}
     .educ-role{opacity:.85}
+
+    /* overlay full viewport - sans scroll */
+    #modeOverlay{
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:12px;
+      background:rgba(255,255,255,.92);
+      backdrop-filter: blur(2px);
+      z-index: 9999;
+    }
+    .modePanel{
+      width: min(1100px, 100%);
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:16px;
+      padding:14px;
+      background:#fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,.10);
+    }
+    .modeTitle{margin:0 0 8px}
+    .modeHint{margin:0 0 10px; opacity:.8}
+
+    /* Grille overlay : 7 cards visibles sans scroll */
+    .qSelectGrid{
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      gap:10px;
+    }
+    .qSelectCard{ padding:12px; }
+    .qSelectTitle{font-weight:900}
+    .qSelectHint{opacity:.8; font-size:.95em}
+
+    @media (max-width: 900px){
+      .qSelectGrid{ grid-template-columns: repeat(2, minmax(210px, 1fr)); }
+    }
+    @media (max-width: 560px){
+      .modePanel{padding:12px}
+      .qSelectGrid{ grid-template-columns: 1fr; }
+      .qSelectCard{ padding:12px; }
+    }
+
+    /* recap look */
+    .summaryList{display:flex; flex-direction:column; gap:12px; margin-top:12px}
+    .summaryCard{
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:16px;
+      padding:12px;
+      background:#fff;
+      box-shadow: 0 6px 18px rgba(0,0,0,.05);
+    }
+    .summaryQTop{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+    .summaryQTitle{font-weight:900; margin:0 0 6px}
+    .summaryAnswer{opacity:.95}
+    .summaryPictos{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .summaryPictos img{height:52px; width:auto; object-fit:contain}
+    .summaryMeta{margin-top:10px; display:flex; gap:10px; flex-wrap:wrap}
+    .metaChip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:999px;
+      background:rgba(0,0,0,.03);
+      font-weight:700;
+    }
   `;
   document.head.appendChild(style);
 })();
 
 /* =========================
-   3) Header FALC (en haut à droite)
+   3) Navigation étapes
+   ========================= */
+function showPoleStep() {
+  if (poleStep) poleStep.style.display = "";
+  if (educStep) educStep.style.display = "none";
+  if (educOut) educOut.textContent = "";
+  if (out) out.textContent = "";
+}
+
+function showEducStep() {
+  if (poleStep) poleStep.style.display = "none";
+  if (educStep) educStep.style.display = "";
+  if (out) out.textContent = "";
+}
+
+/* =========================
+   4) Header FALC (en haut à droite)
    ========================= */
 function findEducPillElement() {
   return (
@@ -238,7 +377,7 @@ function updateFalcHeaderVisibility() {
 }
 
 /* =========================
-   4) Educateur badge
+   5) Educateur badge
    ========================= */
 function ensureSelectHasOption(value, label) {
   const exists = Array.from(select.options).some(opt => opt.value === value);
@@ -260,18 +399,26 @@ select.addEventListener("change", updateBadge);
 updateBadge();
 
 /* =========================
-   4bis) Flow Groupe + Éducateurs
+   6) Flow Pôles + Pros
    ========================= */
-function setStartEnabled(enabled) {
-  btn.disabled = !enabled;
-  btn.style.opacity = enabled ? "" : "0.6";
-  btn.style.cursor = enabled ? "" : "not-allowed";
+function setPoleContinueEnabled(enabled) {
+  if (!btnPoleContinue) return;
+  btnPoleContinue.disabled = !enabled;
+  btnPoleContinue.style.opacity = enabled ? "" : "0.6";
+  btnPoleContinue.style.cursor = enabled ? "" : "not-allowed";
+}
+
+function setEducContinueEnabled(enabled) {
+  if (!btnEducContinue) return;
+  btnEducContinue.disabled = !enabled;
+  btnEducContinue.style.opacity = enabled ? "" : "0.6";
+  btnEducContinue.style.cursor = enabled ? "" : "not-allowed";
 }
 
 function clearEducatorSelection() {
   select.value = "";
   updateBadge();
-  setStartEnabled(false);
+  setEducContinueEnabled(false);
   if (educGrid) educGrid.querySelectorAll(".educ-card").forEach(el => el.classList.remove("is-selected"));
 }
 
@@ -284,28 +431,6 @@ function populateGroupsSelect() {
     opt.textContent = g;
     groupSelect.appendChild(opt);
   });
-}
-
-/* --- Audio sur survol groupe --- */
-let lastSpokenGroup = "";
-let speakTimer = null;
-
-function speakGroupName(name) {
-  if (!name) return;
-  if (!("speechSynthesis" in window)) return;
-
-  window.clearTimeout(speakTimer);
-  speakTimer = window.setTimeout(() => {
-    if (name === lastSpokenGroup) return;
-    lastSpokenGroup = name;
-
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(name);
-    u.lang = "fr-FR";
-    u.rate = 0.95;
-    u.pitch = 0.9;
-    window.speechSynthesis.speak(u);
-  }, 120);
 }
 
 function renderEducatorsForGroup(group) {
@@ -329,6 +454,11 @@ function renderEducatorsForGroup(group) {
       </div>
     `;
 
+    // Audio sur survol/focus (TNI)
+    const speakText = `${e.name}. ${e.role}.`;
+    card.addEventListener("mouseenter", () => speakGroupName(speakText));
+    card.addEventListener("focus", () => speakGroupName(speakText));
+
     card.addEventListener("click", () => {
       const id = e.id || normalizeId(e.name);
       ensureSelectHasOption(id, e.name);
@@ -339,12 +469,19 @@ function renderEducatorsForGroup(group) {
       educGrid.querySelectorAll(".educ-card").forEach(el => el.classList.remove("is-selected"));
       card.classList.add("is-selected");
 
-      // autorise la suite
-      setStartEnabled(true);
-      out.textContent = "";
+      setEducContinueEnabled(true);
+      if (educOut) educOut.textContent = "";
     });
 
     educGrid.appendChild(card);
+  });
+}
+
+function highlightSelectedPoleCard(poleName) {
+  if (!groupGrid) return;
+  groupGrid.querySelectorAll(".group-card").forEach(el => {
+    const isThis = el.dataset.group === poleName;
+    el.classList.toggle("is-selected", isThis);
   });
 }
 
@@ -357,166 +494,201 @@ function renderGroupCards(enabled) {
     const card = document.createElement("button");
     card.type = "button";
     card.className = "group-card";
-    card.disabled = !enabled;
-    card.style.opacity = enabled ? "" : "0.55";
-    card.style.cursor = enabled ? "" : "not-allowed";
-    card.setAttribute("aria-label", `Groupe : ${g}`);
+    card.dataset.group = g;
+
+    // Si le questionnaire impose un pôle : les autres sont désactivés
+    const locked = !!fixedPoleFromOverlay;
+    const isAllowed = !locked || fixedPoleFromOverlay === g;
+
+    card.disabled = !enabled || !isAllowed;
+    card.style.opacity = (enabled && isAllowed) ? "" : "0.45";
+    card.style.cursor = (enabled && isAllowed) ? "" : "not-allowed";
+    card.setAttribute("aria-label", `Pôle : ${g}`);
+
+    const icon = g.includes("accueil") ? "🏠"
+      : g.includes("projet") ? "🧩"
+      : g.includes("sortie") ? "🚌"
+      : g.includes("transversale") ? "🔄"
+      : g.includes("spécifique") ? "🎯"
+      : "🏷️";
 
     card.innerHTML = `
-      <div class="group-badge" aria-hidden="true">🏷️</div>
+      <div class="group-badge" aria-hidden="true">${icon}</div>
       <div class="group-name">${escapeHtml(g)}</div>
     `;
 
-    // Survol souris + focus clavier => énonce
-    card.addEventListener("mouseenter", () => enabled && speakGroupName(g));
-    card.addEventListener("focus", () => enabled && speakGroupName(g));
+    // Audio sur survol/focus (TNI)
+    card.addEventListener("mouseenter", () => (enabled && isAllowed) && speakGroupName(g));
+    card.addEventListener("focus", () => (enabled && isAllowed) && speakGroupName(g));
 
-    // Clic => sélection + affichage éducateurs
     card.addEventListener("click", () => {
-      if (!enabled) return;
+      if (!enabled || !isAllowed) return;
 
-      // sync select caché
+      selectedPole = g;
       if (groupSelect) groupSelect.value = g;
 
-      // highlight groupe
-      groupGrid.querySelectorAll(".group-card").forEach(el => el.classList.remove("is-selected"));
-      card.classList.add("is-selected");
+      highlightSelectedPoleCard(g);
 
-      // reset éducateur + render
+      // Flow demandé : après choix pôle -> seulement là on affiche les éducateurs
       clearEducatorSelection();
+      showEducStep();
       renderEducatorsForGroup(g);
+
+      if (educOut) educOut.textContent = "Choisis le professionnel, puis Continuer.";
     });
 
     groupGrid.appendChild(card);
   });
 }
 
-// Init UI (avant overlay)
-populateGroupsSelect();
-renderGroupCards(false);
-setStartEnabled(false);
-
 /* =========================
-   5) Overlay choix mode (Famille / Jeunes)
+   7) Overlay : choix questionnaire (TOUS - sans scroll)
    ========================= */
-function disableEducatorStep(disabled) {
-  // select éducateur (caché) : sécurité
+function disableEverythingBeforePick(disabled) {
+  // pas de sélection éducateur tant que pas de questionnaire
   select.disabled = disabled;
-  // bouton : interdit tant que mode non choisi / éducateur non choisi
-  if (disabled) setStartEnabled(false);
+  setPoleContinueEnabled(false);
+  setEducContinueEnabled(false);
+
+  // on force l’écran pôle visible, pros caché
+  showPoleStep();
 }
 
 function ensureModeOverlay() {
   if (modeOverlay) return modeOverlay;
 
-  const card = document.querySelector(".card");
-  if (!card) return null;
-
   modeOverlay = document.createElement("div");
   modeOverlay.id = "modeOverlay";
+
   modeOverlay.innerHTML = `
     <div class="modePanel" role="dialog" aria-modal="true" aria-label="Choix du questionnaire">
       <h2 class="modeTitle">Choisis ton questionnaire</h2>
+      <p class="modeHint">Sélectionne le bon questionnaire avant de continuer.</p>
 
-      <div class="modeGrid">
-        <button type="button" class="modeBtn" id="modeFamille">
-          <div class="modeBtnTitle">Questionnaire Famille</div>
-          <div class="modeBtnHint">Parents / responsables</div>
-        </button>
-
-        <button type="button" class="modeBtn" id="modeJeunes">
-          <div class="modeBtnTitle">Questionnaire Jeunes</div>
-          <div class="modeBtnHint">Pour le jeune</div>
-        </button>
-      </div>
+      <div class="qSelectGrid" id="qSelectGrid"></div>
     </div>
   `;
 
-  const style = document.createElement("style");
-  style.textContent = `
-    #modeOverlay{
-      position:absolute;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:14px;
-      background:rgba(255,255,255,.92);
-      backdrop-filter: blur(2px);
-      z-index: 50;
-    }
-    .modePanel{
-      width: min(560px, 100%);
-      border:1px solid rgba(0,0,0,.12);
-      border-radius:16px;
-      padding:16px;
-      background:#fff;
-      box-shadow: 0 10px 30px rgba(0,0,0,.10);
-    }
-    .modeTitle{margin:0 0 14px}
-    .modeGrid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-    .modeBtn{
-      border:1px solid rgba(0,0,0,.15);
-      border-radius:14px;
-      padding:18px 12px;
-      background:#fff;
-      cursor:pointer;
-      text-align:center;
-      min-height:120px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      gap:6px;
-    }
-    .modeBtn:active{transform:scale(.99)}
-    .modeBtnTitle{font-size:18px; font-weight:800}
-    .modeBtnHint{opacity:.8}
-    @media (max-width:560px){
-      .modeGrid{grid-template-columns:1fr}
-    }
-  `;
-  modeOverlay.appendChild(style);
+  document.body.appendChild(modeOverlay);
 
-  const cs = window.getComputedStyle(card);
-  if (cs.position === "static") card.style.position = "relative";
-  card.appendChild(modeOverlay);
+  const grid = modeOverlay.querySelector("#qSelectGrid");
+  grid.innerHTML = QUESTIONNAIRES.map(q => `
+    <button type="button" class="qSelectCard" data-qkey="${escapeHtml(q.key)}" aria-label="${escapeHtml(q.label)}">
+      <div class="qSelectBadge" aria-hidden="true">${escapeHtml(q.icon || "📝")}</div>
+      <div>
+        <div class="qSelectTitle">${escapeHtml(q.label)}</div>
+        <div class="qSelectHint">${escapeHtml(q.hint || "")}</div>
+      </div>
+    </button>
+  `).join("");
 
-  const onPick = (mode) => {
-    selectedMode = mode;
-    questionnairePath =
-      mode === "famille"
-        ? "./src/data/questionnaire_famille.json"
-        : "./src/data/questionnaire.json";
+  // audio sur survol/focus + clic
+  grid.querySelectorAll(".qSelectCard").forEach(btn => {
+    const key = btn.dataset.qkey;
+    const item = QUESTIONNAIRES.find(x => x.key === key);
+    if (!item) return;
 
-    modeOverlay.style.display = "none";
-    disableEducatorStep(false);
-
-    // Active les cards groupes
-    renderGroupCards(true);
-
-    // reset selection
-    clearEducatorSelection();
-    out.textContent = "";
-
-    // stop toute synthèse en cours
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-  };
-
-  modeOverlay.querySelector("#modeFamille").addEventListener("click", () => onPick("famille"));
-  modeOverlay.querySelector("#modeJeunes").addEventListener("click", () => onPick("jeunes"));
+    btn.addEventListener("mouseenter", () => speakGroupName(item.label));
+    btn.addEventListener("focus", () => speakGroupName(item.label));
+    btn.addEventListener("click", () => onPickQuestionnaire(item));
+  });
 
   return modeOverlay;
 }
 
+function onPickQuestionnaire(item) {
+  selectedQuestionnaireKey = item.key;
+  questionnairePath = item.path;
+
+  // reset état
+  fixedPoleFromOverlay = item.fixedPole || "";
+  selectedPole = "";
+  clearEducatorSelection();
+  answers = {};
+  qIndex = 0;
+  questionnaire = null;
+  quizBox = null;
+  chronoStartMs = 0;
+  chronoEndMs = 0;
+
+  // ferme overlay
+  if (modeOverlay) modeOverlay.style.display = "none";
+  disableEverythingBeforePick(false);
+
+  // active cards pôles
+  renderGroupCards(true);
+
+  // on arrive TOUJOURS sur l’écran des pôles (demandé)
+  showPoleStep();
+
+  if (fixedPoleFromOverlay) {
+    // on “verrouille” les pôles : seul le bon reste cliquable
+    highlightSelectedPoleCard(fixedPoleFromOverlay);
+    if (out) out.textContent = "Choisis le pôle (seul le bon est disponible).";
+  } else {
+    if (out) out.textContent = "Choisis d’abord le pôle.";
+  }
+
+  // stop synthèse en cours
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+
 function initModeChoice() {
-  disableEducatorStep(true);
+  disableEverythingBeforePick(true);
   ensureModeOverlay();
 }
 
+populateGroupsSelect();
+renderGroupCards(false);
 initModeChoice();
 
 /* =========================
-   6) Chargement questionnaire JSON
+   8) Boutons retour / continuer étape pros
+   ========================= */
+if (backToPolesBtn) {
+  backToPolesBtn.addEventListener("click", () => {
+    clearEducatorSelection();
+    if (educOut) educOut.textContent = "";
+
+    // retour à l’écran pôles
+    showPoleStep();
+  });
+}
+
+if (btnEducContinue) {
+  btnEducContinue.addEventListener("click", async () => {
+    if (!selectedQuestionnaireKey) {
+      if (educOut) educOut.textContent = "Choisis d’abord un questionnaire.";
+      if (modeOverlay) modeOverlay.style.display = "flex";
+      disableEverythingBeforePick(true);
+      return;
+    }
+
+    if (!selectedPole) {
+      if (educOut) educOut.textContent = "Choisis d’abord un pôle.";
+      showPoleStep();
+      return;
+    }
+
+    if (!select.value) {
+      if (educOut) educOut.textContent = "Merci de choisir le professionnel avant de continuer.";
+      return;
+    }
+
+    if (educOut) educOut.textContent = "";
+    await loadQuestionnaire();
+    ensureQuizBox();
+
+    // DÉMARRAGE CHRONO ici : au moment où on entre réellement dans le questionnaire
+    chronoStartMs = Date.now();
+    chronoEndMs = 0;
+
+    renderQuestion();
+  });
+}
+
+/* =========================
+   9) Chargement questionnaire JSON
    ========================= */
 async function loadQuestionnaire() {
   const tryFetch = async (path) => {
@@ -528,13 +700,14 @@ async function loadQuestionnaire() {
   try {
     questionnaire = await tryFetch(questionnairePath);
   } catch (e) {
+    // fallback sécurité
     const res = await fetch("./src/data/questionnaire.json", { cache: "no-store" });
     questionnaire = await res.json();
   }
 }
 
 /* =========================
-   7) Commit réponse texte (FIX dictée)
+   10) Commit réponse texte (FIX dictée)
    ========================= */
 function commitCurrentTextAnswerIfAny() {
   if (!questionnaire) return;
@@ -546,7 +719,7 @@ function commitCurrentTextAnswerIfAny() {
 }
 
 /* =========================
-   8) Pictos (question + réponses)
+   11) Pictos (question + réponses)
    ========================= */
 function getQuestionPictoFiles(q) {
   if (Array.isArray(q?.pictos)) return q.pictos.filter(Boolean);
@@ -584,7 +757,7 @@ function updateQuestionPictoTop(q) {
 }
 
 /* =========================
-   9) Scale question (range)
+   12) Scale question (range)
    ========================= */
 function renderScaleQuestion(q) {
   const min = Number.isFinite(q.min) ? q.min : 1;
@@ -654,7 +827,7 @@ function renderScaleQuestion(q) {
 }
 
 /* =========================
-   10) Audio (lecture question)
+   13) Audio (lecture question)
    ========================= */
 function speakFR(text) {
   if (!("speechSynthesis" in window)) {
@@ -679,7 +852,7 @@ function buildSpeechTextForQuestion(q) {
 }
 
 /* =========================
-   11) Dictée (micro)
+   14) Dictée (micro)
    ========================= */
 function getActiveTextArea() {
   return document.querySelector(".textAnswer");
@@ -779,7 +952,7 @@ function toggleDictation() {
 }
 
 /* =========================
-   12) Progress UI
+   15) Progress UI
    ========================= */
 function updateProgressUI() {
   if (!quizBox?.progressFill || !questionnaire?.questions?.length) return;
@@ -798,7 +971,7 @@ function updateProgressUI() {
 }
 
 /* =========================
-   13) UI Questionnaire (quizBox)
+   16) UI Questionnaire (quizBox)
    ========================= */
 function ensureQuizBox() {
   if (quizBox) return;
@@ -927,7 +1100,7 @@ function ensureQuizBox() {
 }
 
 /* =========================
-   14) Render question
+   17) Render question
    ========================= */
 function renderQuestion() {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -1032,75 +1205,102 @@ function renderQuestion() {
 }
 
 /* =========================
-   15) Récap + Envoi
+   18) Récap + Envoi + Chrono
    ========================= */
+function formatDuration(ms) {
+  const totalSec = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function getAnswerLabelForQuestion(q, val) {
+  const type = q.type || "single";
+  const isMultiple = q.type === "multiple";
+
+  if (type === "scale") {
+    const labels = Array.isArray(q.labels) ? q.labels : null;
+    if (
+      labels &&
+      Number.isFinite(Number(val)) &&
+      Number.isFinite(Number(q.min)) &&
+      Number.isFinite(Number(q.max))
+    ) {
+      const min = Number(q.min);
+      const max = Number(q.max);
+      const n = Number(val);
+      const t = (n - min) / (max - min);
+      const idx = Math.max(0, Math.min(labels.length - 1, Math.round(t * (labels.length - 1))));
+      return String(labels[idx]);
+    }
+    return String(val ?? "");
+  }
+
+  if (type === "text") return String(val ?? "");
+
+  if (isMultiple) {
+    const selectedVals = Array.isArray(val) ? val : [];
+    return selectedVals
+      .map((v) => (q.choices || []).find((c) => c.value === v)?.label)
+      .filter(Boolean)
+      .join("; ");
+  }
+
+  return (q.choices || []).find((c) => c.value === val)?.label || "";
+}
+
+function getAnswerPictosForQuestion(q, val) {
+  const type = q.type || "single";
+  const isMultiple = q.type === "multiple";
+
+  if (type === "text" || type === "scale") return [];
+
+  const pick = (choiceVal) => (q.choices || []).find((c) => c.value === choiceVal);
+  if (isMultiple) {
+    const arr = Array.isArray(val) ? val : [];
+    return arr.map(v => getChoicePictoFile(pick(v))).filter(Boolean);
+  }
+  return [getChoicePictoFile(pick(val))].filter(Boolean);
+}
+
 function renderSummary() {
   commitCurrentTextAnswerIfAny();
+
+  // stop chrono
+  chronoEndMs = Date.now();
+  const durationMs = chronoStartMs ? (chronoEndMs - chronoStartMs) : 0;
 
   const educatorId = select.value;
   const educLabel = badge.textContent;
 
-  if (quizBox?.progressFill) {
-    quizBox.progressText.textContent = "Récapitulatif";
-    quizBox.progressPct.textContent = "100%";
-    quizBox.progressFill.style.width = "100%";
-    if (quizBox.progressTrack) quizBox.progressTrack.setAttribute("aria-valuenow", "100");
-  }
-
   const summary = questionnaire.questions.map((q) => {
     const val = answers[q.id] ?? "";
-    const type = q.type || "single";
-    const isMultiple = q.type === "multiple";
+    const answerLabel = getAnswerLabelForQuestion(q, val);
 
-    if (type === "scale") {
-      const labels = Array.isArray(q.labels) ? q.labels : null;
-
-      if (
-        labels &&
-        Number.isFinite(Number(val)) &&
-        Number.isFinite(Number(q.min)) &&
-        Number.isFinite(Number(q.max))
-      ) {
-        const min = Number(q.min);
-        const max = Number(q.max);
-        const n = Number(val);
-        const t = (n - min) / (max - min);
-        const idx = Math.max(
-          0,
-          Math.min(labels.length - 1, Math.round(t * (labels.length - 1)))
-        );
-        return { question: q.title, answer: labels[idx] };
-      }
-      return { question: q.title, answer: String(val) };
-    }
-
-    if (type === "text") {
-      return { question: q.title, answer: String(val) };
-    }
-
-    if (isMultiple) {
-      const selectedVals = Array.isArray(val) ? val : [];
-      const labels = selectedVals
-        .map((v) => (q.choices || []).find((c) => c.value === v)?.label)
-        .filter(Boolean)
-        .join("; ");
-      return { question: q.title, answer: labels };
-    }
-
-    const label = (q.choices || []).find((c) => c.value === val)?.label || "";
-    return { question: q.title, answer: label };
+    return {
+      id: q.id,
+      question: q.title,
+      answer: answerLabel,
+      qPictos: getQuestionPictoFiles(q),
+      aPictos: getAnswerPictosForQuestion(q, val),
+    };
   });
 
+  // UI recap style “questionnaire”
   quizBox.card.innerHTML = `
     <div id="pdfArea">
       <h2>Récapitulatif</h2>
-      <p class="out"><strong>Éducateur :</strong> ${escapeHtml(educLabel)}</p>
-      <p class="out"><strong>Date :</strong> ${new Date().toLocaleString("fr-FR")}</p>
+
+      <div class="summaryMeta">
+        <span class="metaChip">👤 Éducateur : ${escapeHtml(educLabel)}</span>
+        <span class="metaChip">🕒 Durée : ${escapeHtml(formatDuration(durationMs))}</span>
+        <span class="metaChip">📅 ${escapeHtml(new Date().toLocaleString("fr-FR"))}</span>
+      </div>
 
       <div class="summaryList" id="summaryList"></div>
     </div>
 
-    <div class="navRow">
+    <div class="navRow" style="margin-top:14px;">
       <button class="btn secondary" id="editBtn" type="button">← Modifier</button>
       <button class="btn" id="sendBtn" type="button">✉️ Envoyer au référent</button>
     </div>
@@ -1111,12 +1311,36 @@ function renderSummary() {
   const list = document.getElementById("summaryList");
   summary.forEach((item) => {
     const div = document.createElement("div");
-    div.className = "summaryItem";
-    div.innerHTML = `<strong>${escapeHtml(item.question)}</strong><div>${escapeHtml(item.answer)}</div>`;
+    div.className = "summaryCard";
+
+    const qPics = (item.qPictos || []).map(f => `
+      <img src="${getPictoSrc(f)}" alt="" loading="lazy" onerror="this.style.display='none'"/>
+    `).join("");
+
+    const aPics = (item.aPictos || []).map(f => `
+      <img src="${getPictoSrc(f)}" alt="" loading="lazy" onerror="this.style.display='none'"/>
+    `).join("");
+
+    div.innerHTML = `
+      <div class="summaryQTop">
+        <div style="flex:1;">
+          <div class="summaryQTitle">${escapeHtml(item.question)}</div>
+          <div class="summaryAnswer">${escapeHtml(item.answer || "")}</div>
+        </div>
+
+        <div class="summaryPictos" aria-hidden="true">
+          ${qPics}
+          ${aPics}
+        </div>
+      </div>
+    `;
+
     list.appendChild(div);
   });
 
   document.getElementById("editBtn").addEventListener("click", () => {
+    // on revient au questionnaire sans casser ce qui existe :
+    // on reconstruit quizBox puis on affiche la question courante
     quizBox = null;
     ensureQuizBox();
     renderQuestion();
@@ -1133,7 +1357,8 @@ function renderSummary() {
         body: JSON.stringify({
           educatorId,
           educatorLabel: educLabel,
-          summary,
+          summary: summary.map(x => ({ question: x.question, answer: x.answer })), // format historique conservé
+          durationSeconds: Math.round(durationMs / 1000), // champ bonus (n’écrase rien)
         }),
       });
 
@@ -1149,25 +1374,17 @@ function renderSummary() {
 }
 
 /* =========================
-   16) Start (bouton Continuer)
+   19) IMPORTANT :
+   - startBtn (poleStep) = garde-fou
    ========================= */
-btn.addEventListener("click", async () => {
-  if (!selectedMode) {
-    out.textContent = "Choisissez d’abord le type de questionnaire (Famille ou Jeunes).";
-    const ov = ensureModeOverlay();
-    if (ov) ov.style.display = "flex";
-    disableEducatorStep(true);
-    return;
-  }
-
-  if (!select.value) {
-    out.textContent = "Merci de choisir l’éducateur avant de continuer.";
-    return;
-  }
-
-  out.textContent = "";
-
-  await loadQuestionnaire();
-  ensureQuizBox();
-  renderQuestion();
-});
+if (btnPoleContinue) {
+  btnPoleContinue.addEventListener("click", () => {
+    if (!selectedQuestionnaireKey) {
+      out.textContent = "Choisis d’abord un questionnaire.";
+      if (modeOverlay) modeOverlay.style.display = "flex";
+      disableEverythingBeforePick(true);
+      return;
+    }
+    out.textContent = "Clique sur un pôle pour continuer.";
+  });
+}
