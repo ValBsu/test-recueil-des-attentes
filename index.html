@@ -20,7 +20,6 @@
         <div class="logo">
           <img src="./logo-adapei.png" alt="Adapei 49" />
         </div>
-
         <div>
           <h1>Recueil des attentes</h1>
           <p class="sub">Questionnaire accessible – FALC & audio</p>
@@ -40,12 +39,11 @@
       <div id="poleStep">
         <h2>Choisir le pôle</h2>
 
-        <!-- On garde le select pour compat/sécurité (caché) -->
+        <!-- Select compat (caché) -->
         <select id="groupSelect" disabled style="display:none;">
           <option value="">— Choisir un groupe —</option>
         </select>
 
-        <!-- Groupes en cards -->
         <div id="groupGrid" class="group-grid" aria-label="Liste des pôles"></div>
 
         <button class="btn" type="button" id="startBtn">Continuer</button>
@@ -56,16 +54,12 @@
       <div id="educStep" style="display:none;">
         <h2>Choisir le professionnel</h2>
 
-        <!-- Éducateurs en cards -->
         <div id="educGrid" class="educ-grid" aria-live="polite"></div>
 
-        <!-- Select historique conservé (compat), caché -->
-        <div class="field" style="display:none;">
-          <label for="educSelect">Choisis ton éducateur référent</label>
-          <select id="educSelect">
-            <option value="">— Sélectionner —</option>
-          </select>
-        </div>
+        <!-- Select compat (caché) -->
+        <select id="educSelect" style="display:none;">
+          <option value="">— Sélectionner —</option>
+        </select>
 
         <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
           <button class="btn secondary" type="button" id="backToPolesBtn">← Retour</button>

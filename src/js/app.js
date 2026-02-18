@@ -1,56 +1,54 @@
-// app.js (fichier complet REORGANISÉ + PREMIUM progress réel)
-// ✅ Choix AU DÉMARRAGE en overlay : tous les questionnaires (sans scroll)
-// ✅ Après choix questionnaire -> écran pôles uniquement
-// ✅ Après choix pôle -> écran pros
-// ✅ Survol/focus cards = énoncé audio (TNI friendly)
-// ✅ Charge automatiquement le bon JSON + fallback sécurité
-// ✅ FIX dictée : les réponses "interim" visibles sont sauvegardées avant navigation + récap
-// ✅ Audio lecture question
-// ✅ Progression réelle : "Question X/Y" + "%"
-// ✅ Récap : chrono temps réel passé + rendu avec pictos (si présents)
-// ✅ Rien cassé : envoi netlify/functions/submit conservé
+/* app.js — épuré SAFE (sans casser)
+   Flow:
+   1) Overlay -> choisir questionnaire
+   2) Choisir pôle (uniquement pôles visibles)
+   3) Choisir pro (uniquement pros)
+   4) Questionnaire (audio, dictée, pictos, progress)
+   5) Récap (chrono + pictos) + envoi netlify
+*/
 
+"use strict";
+
+/* =========================
+   DOM refs
+   ========================= */
 const select = document.getElementById("educSelect");
 const badge = document.getElementById("educBadge");
 
-// Boutons / sorties
-const btnPoleContinue = document.getElementById("startBtn"); // bouton dans poleStep
-const out = document.getElementById("out");
-
-// Étapes (HTML 2 steps)
 const poleStep = document.getElementById("poleStep");
 const educStep = document.getElementById("educStep");
-const backToPolesBtn = document.getElementById("backToPolesBtn");
-const btnEducContinue = document.getElementById("continueAfterEducBtn");
-const educOut = document.getElementById("educOut");
 
-// UI pôles/pros
-const groupSelect = document.getElementById("groupSelect"); // conservé (caché)
+const groupSelect = document.getElementById("groupSelect"); // compat (caché)
 const groupGrid = document.getElementById("groupGrid");
 const educGrid = document.getElementById("educGrid");
 
+const btnPoleContinue = document.getElementById("startBtn");
+const btnBack = document.getElementById("backToPolesBtn");
+const btnEducContinue = document.getElementById("continueAfterEducBtn");
+
+const out = document.getElementById("out");
+const educOut = document.getElementById("educOut");
+
 /* =========================
-   1) Config / State
+   Config / State
    ========================= */
 const PICTOS_BASE_PATH = "./src/assets/pictos/";
 const EDUC_FALC_PICTO_FILE = "FALC.jpg";
-const DEFAULT_EDUC_PHOTO = "./src/assets/avatar.png";
 
 let falcHeaderImg = null;
 
-// Questionnaire choisi (clé)
-let selectedQuestionnaireKey = null;
-// Si l’overlay impose un pôle (ex: "Pôle accueil"), on le stocke ici
-let fixedPoleFromOverlay = "";
-let selectedPole = ""; // pôle choisi
+let modeOverlay = null;
 
-let questionnairePath = "./src/data/questionnaire.json"; // fallback
+let selectedQuestionnaireKey = null;
+let questionnairePath = "./src/data/questionnaire.json";
 let questionnaire = null;
+
+let fixedPoleFromOverlay = "";
+let selectedPole = "";
 let qIndex = 0;
 let answers = {}; // qId -> value
 
 let quizBox = null;
-let modeOverlay = null;
 
 /* Chrono */
 let chronoStartMs = 0;
@@ -63,17 +61,17 @@ let listening = false;
 let interimBaseValue = "";
 
 /* =========================
-   1bis) Données éducateurs
+   Données (éducateurs / pôles)
    ========================= */
+const DEFAULT_EDUC_PHOTO = "./src/assets/avatar.png";
+
 const EDUCATORS = [
-  // Pôle accueil
   { name: "Alexis Plessis", role: "Éducateur spécialisé", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "alexis" },
   { name: "Morgan Dehaies", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "morgane" },
   { name: "Camille Rouillé", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "camille" },
   { name: "Marina Trottier", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "marina" },
   { name: "Lucile Charrier", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "lucile" },
 
-  // Pôle projet
   { name: "Pauline Martin", role: "Éducatrice spécialisée", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "pauline-martin" },
   { name: "Marine Toureau", role: "Monitrice éducatrice", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "marine-toureau" },
   { name: "Wilfried Tijou", role: "Éducateur technique", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "wilfried-tijou" },
@@ -81,21 +79,18 @@ const EDUCATORS = [
   { name: "Nadège Rétif", role: "Éducatrice spécialisée", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "nadege-retif" },
   { name: "Nicolas Marmin", role: "Éducateur spécialisé", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "nicolas-marmin" },
 
-  // Pôle sortie
   { name: "Karen Goujon", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "karen-goujon" },
   { name: "Damien Chautard", role: "Éducateur technique", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "damien-chautard" },
-  { name: "Céline Mottais", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "celine" },
-  { name: "Josélita Martot", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "joselita" },
+  { name: "Céline", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "celine" },
+  { name: "Josélita", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "joselita" },
   { name: "Marie Boré", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "marie-bore" },
 
-  // Unité transversale
-  { name: "Pascal Rochard", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "pascal-bochard" },
+  { name: "Pascal Bochard", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "pascal-bochard" },
   { name: "Julien Fabre", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "julien-fabre" },
   { name: "Chloé Galand", role: "Éducatrice spécialisée", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "chloe-galand" },
   { name: "Audrey Morille", role: "Éducatrice spécialisée", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "audrey-morille" },
   { name: "Claire Constanty", role: "Monitrice éducatrice", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "claire-constanty" },
 
-  // Unité spécifique
   { name: "Matthieu Rivron", role: "Éducateur spécialisé", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "matthieu" },
   { name: "Noémie Rat", role: "Éducatrice spécialisée", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "noemie-rat" },
   { name: "Juliette Rouseau", role: "Monitrice éducatrice", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "juliette-rouseau" },
@@ -105,14 +100,13 @@ const EDUCATORS = [
 
 const GROUPS = Array.from(new Set(EDUCATORS.map(e => e.group)));
 
-/* =========================
-   1ter) Liste des questionnaires (OVERLAY)
-   ========================= */
 const QUESTIONNAIRES = [
   { key: "famille", label: "Questionnaire Famille", hint: "Parents / responsables", icon: "👨‍👩‍👧‍👦", path: "./src/data/questionnaire_famille.json" },
   { key: "jeunes", label: "Questionnaire Jeunes", hint: "Pour le jeune", icon: "🧒", path: "./src/data/questionnaire.json" },
 
   { key: "pole_accueil", label: "Pôle accueil", hint: "Questionnaire du pôle", icon: "🏠", path: "./src/data/questionnaire_PA.json", fixedPole: "Pôle accueil" },
+  // ⚠️ IMPORTANT: vérifie le vrai nom du fichier sur ton disque.
+  // Si ton fichier s'appelle encore questionnaire.PP.json, remets-le. Sinon laisse questionnaire_PP.json.
   { key: "pole_projet", label: "Pôle projet", hint: "Questionnaire du pôle", icon: "🧩", path: "./src/data/questionnaire_PP.json", fixedPole: "Pôle projet" },
   { key: "pole_sortie", label: "Pôle sortie", hint: "Questionnaire du pôle", icon: "🚌", path: "./src/data/questionnaire_PS.json", fixedPole: "Pôle sortie" },
 
@@ -121,7 +115,7 @@ const QUESTIONNAIRES = [
 ];
 
 /* =========================
-   2) Utils
+   Utils
    ========================= */
 function escapeHtml(s) {
   return String(s)
@@ -130,15 +124,6 @@ function escapeHtml(s) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
-}
-
-function getPictoSrc(fileName) {
-  if (!fileName) return "";
-  return encodeURI(`${PICTOS_BASE_PATH}${fileName}`);
-}
-
-function getCurrentQuestion() {
-  return questionnaire.questions[qIndex];
 }
 
 function normalizeId(s) {
@@ -150,13 +135,65 @@ function normalizeId(s) {
     .replace(/(^-|-$)/g, "");
 }
 
+function getPictoSrc(fileName) {
+  if (!fileName) return "";
+  return encodeURI(`${PICTOS_BASE_PATH}${fileName}`);
+}
+
+function safeQuestionsArray(qnr) {
+  const arr = qnr?.questions;
+  return Array.isArray(arr) ? arr : [];
+}
+
+function getCurrentQuestion() {
+  const qs = safeQuestionsArray(questionnaire);
+  return qs[qIndex];
+}
+
 /* =========================
-   2bis) Audio helpers (TNI)
+   Identité obligatoire (Nom/Prénom/Âge)
+   - SAFE: auto-détection par id OU titre
+   ========================= */
+function isIdentityQuestion(q) {
+  const id = String(q?.id || "").toLowerCase();
+  const title = String(q?.title || "").toLowerCase();
+
+  const has = (txt, ...words) => words.some(w => txt.includes(w));
+
+  const isFirst = has(id, "prenom", "prénom") || (has(title, "prénom", "prenom") && !has(title, "nom de famille"));
+  const isLast  = has(id, "nom") || (has(title, "nom") && !has(title, "prénom", "prenom"));
+  const isAge   = has(id, "age", "âge") || has(title, "âge", "age");
+
+  // évite les faux positifs (ex: "nom du référent")
+  const forbidden = has(title, "référent", "referent", "educateur", "éducateur", "professionnel", "pôle", "pole");
+  if (forbidden) return false;
+
+  return isFirst || isLast || isAge;
+}
+
+function isAnswered(val) {
+  if (val === undefined || val === null) return false;
+  if (Array.isArray(val)) return val.length > 0;
+  return String(val).trim() !== "";
+}
+
+function focusFirstAnswerField() {
+  const el =
+    document.querySelector(".textAnswer") ||
+    document.querySelector("#choices input[type='radio']") ||
+    document.querySelector("#choices input[type='checkbox']") ||
+    document.querySelector("#choices input") ||
+    null;
+  if (el) el.focus();
+}
+
+/* =========================
+   Audio (cards)
    ========================= */
 let lastSpokenText = "";
 let speakTimer = null;
 
-function speakGroupName(text) {
+function speakHover(text) {
   if (!text) return;
   if (!("speechSynthesis" in window)) return;
 
@@ -174,10 +211,23 @@ function speakGroupName(text) {
   }, 120);
 }
 
+function speakFR(text) {
+  if (!("speechSynthesis" in window)) {
+    alert("Audio non disponible sur ce navigateur.");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "fr-FR";
+  u.rate = 0.95;
+  u.pitch = 0.9;
+  window.speechSynthesis.speak(u);
+}
+
 /* =========================
-   2ter) Styles UI (cards + overlay sans scroll)
+   Styles injectés (overlay + cards + recap)
    ========================= */
-(function injectCardStyles() {
+(function injectStyles() {
   const style = document.createElement("style");
   style.textContent = `
     .group-grid, .educ-grid, .qSelectGrid{
@@ -186,11 +236,8 @@ function speakGroupName(text) {
       gap:12px;
       margin-top:8px;
     }
-
     .group-card, .educ-card, .qSelectCard{
-      display:flex;
-      align-items:center;
-      gap:12px;
+      display:flex; align-items:center; gap:12px;
       padding:14px;
       border:1px solid rgba(0,0,0,.12);
       border-radius:16px;
@@ -202,36 +249,21 @@ function speakGroupName(text) {
     .group-card:hover, .educ-card:hover, .qSelectCard:hover{ transform: translateY(-1px); }
     .group-card:active, .educ-card:active, .qSelectCard:active{transform:scale(.995)}
     .group-card.is-selected, .educ-card.is-selected{outline:3px solid rgba(0,0,0,.22)}
-
     .group-badge, .qSelectBadge{
       width:42px;height:42px;
       border-radius:12px;
       background:rgba(0,0,0,.06);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:20px;
-      flex:0 0 auto;
+      display:flex; align-items:center; justify-content:center;
+      font-size:20px; flex:0 0 auto;
     }
     .group-name{font-weight:900}
-
-    .educ-photo{
-      width:56px;height:56px;
-      border-radius:50%;
-      object-fit:cover;
-      background:rgba(0,0,0,.06);
-      flex:0 0 auto;
-    }
+    .educ-photo{width:56px;height:56px;border-radius:50%;object-fit:cover;background:rgba(0,0,0,.06);flex:0 0 auto;}
     .educ-name{font-weight:900}
     .educ-role{opacity:.85}
 
-    /* overlay full viewport - sans scroll */
     #modeOverlay{
-      position:fixed;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
       padding:12px;
       background:rgba(255,255,255,.92);
       backdrop-filter: blur(2px);
@@ -247,8 +279,6 @@ function speakGroupName(text) {
     }
     .modeTitle{margin:0 0 8px}
     .modeHint{margin:0 0 10px; opacity:.8}
-
-    /* Grille overlay : 7 cards visibles sans scroll */
     .qSelectGrid{
       grid-template-columns: repeat(3, minmax(220px, 1fr));
       gap:10px;
@@ -256,17 +286,13 @@ function speakGroupName(text) {
     .qSelectCard{ padding:12px; }
     .qSelectTitle{font-weight:900}
     .qSelectHint{opacity:.8; font-size:.95em}
-
     @media (max-width: 900px){
       .qSelectGrid{ grid-template-columns: repeat(2, minmax(210px, 1fr)); }
     }
     @media (max-width: 560px){
-      .modePanel{padding:12px}
       .qSelectGrid{ grid-template-columns: 1fr; }
-      .qSelectCard{ padding:12px; }
     }
 
-    /* recap look */
     .summaryList{display:flex; flex-direction:column; gap:12px; margin-top:12px}
     .summaryCard{
       border:1px solid rgba(0,0,0,.12);
@@ -275,7 +301,7 @@ function speakGroupName(text) {
       background:#fff;
       box-shadow: 0 6px 18px rgba(0,0,0,.05);
     }
-    .summaryQTop{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+    .summaryTop{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
     .summaryQTitle{font-weight:900; margin:0 0 6px}
     .summaryAnswer{opacity:.95}
     .summaryPictos{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
@@ -289,55 +315,29 @@ function speakGroupName(text) {
       background:rgba(0,0,0,.03);
       font-weight:700;
     }
+
+    .qPictoWrap{margin:10px 0 6px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
+    .qPicto{height:70px; width:auto; object-fit:contain}
+    .choiceRow{display:flex;align-items:center;gap:10px;margin:10px 0;}
+    .choiceLabel{display:flex;align-items:center;gap:10px;cursor:pointer;flex:1;}
+    .choicePicto{height:44px;width:44px;object-fit:contain;margin-left:auto;}
+    .navRow3{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .centerActions{display:flex;align-items:center;justify-content:center;gap:10px;min-width:110px}
   `;
   document.head.appendChild(style);
 })();
 
 /* =========================
-   3) Navigation étapes
+   FALC header (icône en haut)
    ========================= */
-function showPoleStep() {
-  if (poleStep) poleStep.style.display = "";
-  if (educStep) educStep.style.display = "none";
-  if (educOut) educOut.textContent = "";
-  if (out) out.textContent = "";
-}
-
-function showEducStep() {
-  if (poleStep) poleStep.style.display = "none";
-  if (educStep) educStep.style.display = "";
-  if (out) out.textContent = "";
-}
-
-/* =========================
-   4) Header FALC (en haut à droite)
-   ========================= */
-function findEducPillElement() {
-  return (
-    badge.closest(".badge") ||
-    badge.closest(".pill") ||
-    badge.closest(".chip") ||
-    badge.closest(".educBadge") ||
-    badge.parentElement
-  );
-}
-
 function findHeaderContainerFrom(el) {
   if (!el) return null;
-  return (
-    el.closest("header") ||
-    el.closest(".topbar") ||
-    el.closest(".header") ||
-    el.closest(".appHeader") ||
-    el.parentElement
-  );
+  return el.closest("header") || el.closest(".top") || el.parentElement;
 }
 
 function ensureFalcInHeader() {
   if (falcHeaderImg) return;
-
-  const pillEl = findEducPillElement();
-  const headerEl = findHeaderContainerFrom(pillEl);
+  const headerEl = findHeaderContainerFrom(badge);
   if (!headerEl) return;
 
   try {
@@ -347,14 +347,12 @@ function ensureFalcInHeader() {
     headerEl.style.position = "relative";
   }
 
-  if (!headerEl.style.paddingRight) headerEl.style.paddingRight = "70px";
+  headerEl.style.paddingRight = headerEl.style.paddingRight || "70px";
 
   falcHeaderImg = document.createElement("img");
-  falcHeaderImg.id = "falcHeaderImg";
   falcHeaderImg.alt = "FALC";
   falcHeaderImg.src = getPictoSrc(EDUC_FALC_PICTO_FILE);
   falcHeaderImg.style.display = "none";
-
   falcHeaderImg.style.position = "absolute";
   falcHeaderImg.style.right = "18px";
   falcHeaderImg.style.top = "50%";
@@ -362,196 +360,45 @@ function ensureFalcInHeader() {
   falcHeaderImg.style.height = "40px";
   falcHeaderImg.style.width = "40px";
   falcHeaderImg.style.objectFit = "contain";
-
-  falcHeaderImg.addEventListener("error", () => {
-    falcHeaderImg.style.display = "none";
-  });
+  falcHeaderImg.addEventListener("error", () => (falcHeaderImg.style.display = "none"));
 
   headerEl.appendChild(falcHeaderImg);
-}
-
-function updateFalcHeaderVisibility() {
-  ensureFalcInHeader();
-  if (!falcHeaderImg) return;
-  falcHeaderImg.style.display = select.value ? "block" : "none";
-}
-
-/* =========================
-   5) Educateur badge
-   ========================= */
-function ensureSelectHasOption(value, label) {
-  const exists = Array.from(select.options).some(opt => opt.value === value);
-  if (exists) return;
-
-  const opt = document.createElement("option");
-  opt.value = value;
-  opt.textContent = label;
-  select.appendChild(opt);
 }
 
 function updateBadge() {
   const label = select.options[select.selectedIndex]?.textContent;
   badge.textContent = label && label !== "— Sélectionner —" ? label : "à choisir";
-  updateFalcHeaderVisibility();
+
+  ensureFalcInHeader();
+  if (falcHeaderImg) falcHeaderImg.style.display = select.value ? "block" : "none";
 }
 
 select.addEventListener("change", updateBadge);
 updateBadge();
 
 /* =========================
-   6) Flow Pôles + Pros
+   Navigation steps
    ========================= */
-function setPoleContinueEnabled(enabled) {
-  if (!btnPoleContinue) return;
-  btnPoleContinue.disabled = !enabled;
-  btnPoleContinue.style.opacity = enabled ? "" : "0.6";
-  btnPoleContinue.style.cursor = enabled ? "" : "not-allowed";
+function showPoleStep() {
+  poleStep.style.display = "";
+  educStep.style.display = "none";
+  educOut.textContent = "";
 }
-
-function setEducContinueEnabled(enabled) {
-  if (!btnEducContinue) return;
-  btnEducContinue.disabled = !enabled;
-  btnEducContinue.style.opacity = enabled ? "" : "0.6";
-  btnEducContinue.style.cursor = enabled ? "" : "not-allowed";
-}
-
-function clearEducatorSelection() {
-  select.value = "";
-  updateBadge();
-  setEducContinueEnabled(false);
-  if (educGrid) educGrid.querySelectorAll(".educ-card").forEach(el => el.classList.remove("is-selected"));
-}
-
-function populateGroupsSelect() {
-  if (!groupSelect) return;
-  groupSelect.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
-  GROUPS.forEach(g => {
-    const opt = document.createElement("option");
-    opt.value = g;
-    opt.textContent = g;
-    groupSelect.appendChild(opt);
-  });
-}
-
-function renderEducatorsForGroup(group) {
-  if (!educGrid) return;
-  educGrid.innerHTML = "";
-
-  const list = EDUCATORS.filter(e => e.group === group);
-  if (!list.length) return;
-
-  list.forEach(e => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "educ-card";
-    card.setAttribute("aria-label", `${e.name}, ${e.role}`);
-
-    card.innerHTML = `
-      <img class="educ-photo" src="${e.photo}" alt="" loading="lazy" />
-      <div>
-        <div class="educ-name">${escapeHtml(e.name)}</div>
-        <div class="educ-role">${escapeHtml(e.role)}</div>
-      </div>
-    `;
-
-    // Audio sur survol/focus (TNI)
-    const speakText = `${e.name}. ${e.role}.`;
-    card.addEventListener("mouseenter", () => speakGroupName(speakText));
-    card.addEventListener("focus", () => speakGroupName(speakText));
-
-    card.addEventListener("click", () => {
-      const id = e.id || normalizeId(e.name);
-      ensureSelectHasOption(id, e.name);
-
-      select.value = id;
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-
-      educGrid.querySelectorAll(".educ-card").forEach(el => el.classList.remove("is-selected"));
-      card.classList.add("is-selected");
-
-      setEducContinueEnabled(true);
-      if (educOut) educOut.textContent = "";
-    });
-
-    educGrid.appendChild(card);
-  });
-}
-
-function highlightSelectedPoleCard(poleName) {
-  if (!groupGrid) return;
-  groupGrid.querySelectorAll(".group-card").forEach(el => {
-    const isThis = el.dataset.group === poleName;
-    el.classList.toggle("is-selected", isThis);
-  });
-}
-
-function renderGroupCards(enabled) {
-  if (!groupGrid) return;
-
-  groupGrid.innerHTML = "";
-
-  GROUPS.forEach(g => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "group-card";
-    card.dataset.group = g;
-
-    // Si le questionnaire impose un pôle : les autres sont désactivés
-    const locked = !!fixedPoleFromOverlay;
-    const isAllowed = !locked || fixedPoleFromOverlay === g;
-
-    card.disabled = !enabled || !isAllowed;
-    card.style.opacity = (enabled && isAllowed) ? "" : "0.45";
-    card.style.cursor = (enabled && isAllowed) ? "" : "not-allowed";
-    card.setAttribute("aria-label", `Pôle : ${g}`);
-
-    const icon = g.includes("accueil") ? "🏠"
-      : g.includes("projet") ? "🧩"
-      : g.includes("sortie") ? "🚌"
-      : g.includes("transversale") ? "🔄"
-      : g.includes("spécifique") ? "🎯"
-      : "🏷️";
-
-    card.innerHTML = `
-      <div class="group-badge" aria-hidden="true">${icon}</div>
-      <div class="group-name">${escapeHtml(g)}</div>
-    `;
-
-    // Audio sur survol/focus (TNI)
-    card.addEventListener("mouseenter", () => (enabled && isAllowed) && speakGroupName(g));
-    card.addEventListener("focus", () => (enabled && isAllowed) && speakGroupName(g));
-
-    card.addEventListener("click", () => {
-      if (!enabled || !isAllowed) return;
-
-      selectedPole = g;
-      if (groupSelect) groupSelect.value = g;
-
-      highlightSelectedPoleCard(g);
-
-      // Flow demandé : après choix pôle -> seulement là on affiche les éducateurs
-      clearEducatorSelection();
-      showEducStep();
-      renderEducatorsForGroup(g);
-
-      if (educOut) educOut.textContent = "Choisis le professionnel, puis Continuer.";
-    });
-
-    groupGrid.appendChild(card);
-  });
+function showEducStep() {
+  poleStep.style.display = "none";
+  educStep.style.display = "";
+  out.textContent = "";
 }
 
 /* =========================
-   7) Overlay : choix questionnaire (TOUS - sans scroll)
+   Overlay questionnaires
    ========================= */
-function disableEverythingBeforePick(disabled) {
-  // pas de sélection éducateur tant que pas de questionnaire
+function setBeforePickState(disabled) {
+  // on bloque les interactions essentielles tant que pas de questionnaire
   select.disabled = disabled;
-  setPoleContinueEnabled(false);
-  setEducContinueEnabled(false);
-
-  // on force l’écran pôle visible, pros caché
-  showPoleStep();
+  btnEducContinue.disabled = true;
+  // le bouton "Continuer" des pôles sert juste de rappel
+  btnPoleContinue.disabled = false;
 }
 
 function ensureModeOverlay() {
@@ -559,16 +406,13 @@ function ensureModeOverlay() {
 
   modeOverlay = document.createElement("div");
   modeOverlay.id = "modeOverlay";
-
   modeOverlay.innerHTML = `
     <div class="modePanel" role="dialog" aria-modal="true" aria-label="Choix du questionnaire">
       <h2 class="modeTitle">Choisis ton questionnaire</h2>
       <p class="modeHint">Sélectionne le bon questionnaire avant de continuer.</p>
-
       <div class="qSelectGrid" id="qSelectGrid"></div>
     </div>
   `;
-
   document.body.appendChild(modeOverlay);
 
   const grid = modeOverlay.querySelector("#qSelectGrid");
@@ -582,113 +426,194 @@ function ensureModeOverlay() {
     </button>
   `).join("");
 
-  // audio sur survol/focus + clic
   grid.querySelectorAll(".qSelectCard").forEach(btn => {
-    const key = btn.dataset.qkey;
-    const item = QUESTIONNAIRES.find(x => x.key === key);
+    const item = QUESTIONNAIRES.find(x => x.key === btn.dataset.qkey);
     if (!item) return;
 
-    btn.addEventListener("mouseenter", () => speakGroupName(item.label));
-    btn.addEventListener("focus", () => speakGroupName(item.label));
+    btn.addEventListener("mouseenter", () => speakHover(item.label));
+    btn.addEventListener("focus", () => speakHover(item.label));
     btn.addEventListener("click", () => onPickQuestionnaire(item));
   });
 
   return modeOverlay;
 }
 
-function onPickQuestionnaire(item) {
+function openOverlay() {
+  ensureModeOverlay();
+  modeOverlay.style.display = "flex";
+  setBeforePickState(true);
+}
+
+function closeOverlay() {
+  if (modeOverlay) modeOverlay.style.display = "none";
+  setBeforePickState(false);
+}
+
+function resetForNewQuestionnaire(item) {
   selectedQuestionnaireKey = item.key;
   questionnairePath = item.path;
 
-  // reset état
   fixedPoleFromOverlay = item.fixedPole || "";
   selectedPole = "";
-  clearEducatorSelection();
-  answers = {};
-  qIndex = 0;
   questionnaire = null;
+  qIndex = 0;
+  answers = {};
   quizBox = null;
   chronoStartMs = 0;
   chronoEndMs = 0;
 
-  // ferme overlay
-  if (modeOverlay) modeOverlay.style.display = "none";
-  disableEverythingBeforePick(false);
+  // reset educator
+  select.innerHTML = `<option value="">— Sélectionner —</option>`;
+  select.value = "";
+  updateBadge();
+  educGrid.innerHTML = "";
 
-  // active cards pôles
+  // rendu pôles cliquables
   renderGroupCards(true);
-
-  // on arrive TOUJOURS sur l’écran des pôles (demandé)
   showPoleStep();
 
-  if (fixedPoleFromOverlay) {
-    // on “verrouille” les pôles : seul le bon reste cliquable
-    highlightSelectedPoleCard(fixedPoleFromOverlay);
-    if (out) out.textContent = "Choisis le pôle (seul le bon est disponible).";
-  } else {
-    if (out) out.textContent = "Choisis d’abord le pôle.";
-  }
+  out.textContent = fixedPoleFromOverlay
+    ? "Choisis le pôle (seul le bon est disponible)."
+    : "Choisis d’abord le pôle.";
 
-  // stop synthèse en cours
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
+function onPickQuestionnaire(item) {
+  resetForNewQuestionnaire(item);
+  closeOverlay();
+}
+
 function initModeChoice() {
-  disableEverythingBeforePick(true);
-  ensureModeOverlay();
+  openOverlay();
 }
 
-populateGroupsSelect();
-renderGroupCards(false);
-initModeChoice();
-
 /* =========================
-   8) Boutons retour / continuer étape pros
+   Pôles -> Pros
    ========================= */
-if (backToPolesBtn) {
-  backToPolesBtn.addEventListener("click", () => {
-    clearEducatorSelection();
-    if (educOut) educOut.textContent = "";
-
-    // retour à l’écran pôles
-    showPoleStep();
+function populateGroupsSelectCompat() {
+  if (!groupSelect) return;
+  groupSelect.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
+  GROUPS.forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = g;
+    groupSelect.appendChild(opt);
   });
 }
 
-if (btnEducContinue) {
-  btnEducContinue.addEventListener("click", async () => {
-    if (!selectedQuestionnaireKey) {
-      if (educOut) educOut.textContent = "Choisis d’abord un questionnaire.";
-      if (modeOverlay) modeOverlay.style.display = "flex";
-      disableEverythingBeforePick(true);
-      return;
-    }
+function ensureSelectOption(id, label) {
+  if ([...select.options].some(o => o.value === id)) return;
+  const opt = document.createElement("option");
+  opt.value = id;
+  opt.textContent = label;
+  select.appendChild(opt);
+}
 
-    if (!selectedPole) {
-      if (educOut) educOut.textContent = "Choisis d’abord un pôle.";
-      showPoleStep();
-      return;
-    }
+function renderEducatorsForGroup(group) {
+  educGrid.innerHTML = "";
+  const list = EDUCATORS.filter(e => e.group === group);
 
-    if (!select.value) {
-      if (educOut) educOut.textContent = "Merci de choisir le professionnel avant de continuer.";
-      return;
-    }
+  if (!list.length) {
+    educOut.textContent = "Aucun professionnel trouvé pour ce pôle.";
+    return;
+  }
 
-    if (educOut) educOut.textContent = "";
-    await loadQuestionnaire();
-    ensureQuizBox();
+  list.forEach(e => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "educ-card";
+    card.innerHTML = `
+      <img class="educ-photo" src="${e.photo}" alt="" loading="lazy" />
+      <div>
+        <div class="educ-name">${escapeHtml(e.name)}</div>
+        <div class="educ-role">${escapeHtml(e.role)}</div>
+      </div>
+    `;
 
-    // DÉMARRAGE CHRONO ici : au moment où on entre réellement dans le questionnaire
-    chronoStartMs = Date.now();
-    chronoEndMs = 0;
+    const speakText = `${e.name}. ${e.role}.`;
+    card.addEventListener("mouseenter", () => speakHover(speakText));
+    card.addEventListener("focus", () => speakHover(speakText));
 
-    renderQuestion();
+    card.addEventListener("click", () => {
+      const id = e.id || normalizeId(e.name);
+      ensureSelectOption(id, e.name);
+
+      select.value = id;
+      updateBadge();
+
+      educGrid.querySelectorAll(".educ-card").forEach(el => el.classList.remove("is-selected"));
+      card.classList.add("is-selected");
+
+      btnEducContinue.disabled = false;
+      educOut.textContent = "";
+    });
+
+    educGrid.appendChild(card);
+  });
+}
+
+function highlightSelectedPoleCard(name) {
+  groupGrid.querySelectorAll(".group-card").forEach(el => {
+    el.classList.toggle("is-selected", el.dataset.group === name);
+  });
+}
+
+function renderGroupCards(enabled) {
+  groupGrid.innerHTML = "";
+
+  GROUPS.forEach(g => {
+    const locked = !!fixedPoleFromOverlay;
+    const isAllowed = !locked || fixedPoleFromOverlay === g;
+
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "group-card";
+    card.dataset.group = g;
+
+    card.disabled = !enabled || !isAllowed;
+    card.style.opacity = (enabled && isAllowed) ? "" : "0.45";
+    card.style.cursor = (enabled && isAllowed) ? "" : "not-allowed";
+
+    const icon = g.includes("accueil") ? "🏠"
+      : g.includes("projet") ? "🧩"
+      : g.includes("sortie") ? "🚌"
+      : g.includes("transversale") ? "🔄"
+      : g.includes("spécifique") ? "🎯"
+      : "🏷️";
+
+    card.innerHTML = `
+      <div class="group-badge" aria-hidden="true">${icon}</div>
+      <div class="group-name">${escapeHtml(g)}</div>
+    `;
+
+    card.addEventListener("mouseenter", () => (enabled && isAllowed) && speakHover(g));
+    card.addEventListener("focus", () => (enabled && isAllowed) && speakHover(g));
+
+    card.addEventListener("click", () => {
+      if (!enabled || !isAllowed) return;
+
+      selectedPole = g;
+      if (groupSelect) groupSelect.value = g;
+
+      highlightSelectedPoleCard(g);
+
+      // bascule vers pros
+      select.value = "";
+      updateBadge();
+      btnEducContinue.disabled = true;
+
+      showEducStep();
+      renderEducatorsForGroup(g);
+      educOut.textContent = "Choisis le professionnel, puis Continuer.";
+    });
+
+    groupGrid.appendChild(card);
   });
 }
 
 /* =========================
-   9) Chargement questionnaire JSON
+   Chargement JSON
    ========================= */
 async function loadQuestionnaire() {
   const tryFetch = async (path) => {
@@ -697,43 +622,40 @@ async function loadQuestionnaire() {
     return await res.json();
   };
 
+  let data = null;
   try {
-    questionnaire = await tryFetch(questionnairePath);
+    data = await tryFetch(questionnairePath);
   } catch (e) {
-    // fallback sécurité
-    const res = await fetch("./src/data/questionnaire.json", { cache: "no-store" });
-    questionnaire = await res.json();
+    try {
+      data = await tryFetch("./src/data/questionnaire.json");
+    } catch (e2) {
+      data = null;
+    }
   }
+
+  const qs = safeQuestionsArray(data);
+  if (!data || !qs.length) {
+    alert("Questionnaire introuvable ou vide. Vérifie le nom du fichier JSON.");
+    questionnaire = { questions: [] };
+    return;
+  }
+
+  questionnaire = data;
 }
 
 /* =========================
-   10) Commit réponse texte (FIX dictée)
-   ========================= */
-function commitCurrentTextAnswerIfAny() {
-  if (!questionnaire) return;
-  const q = getCurrentQuestion();
-  const type = q?.type || "single";
-  if (type !== "text") return;
-  const ta = document.querySelector(".textAnswer");
-  if (ta) answers[q.id] = ta.value;
-}
-
-/* =========================
-   11) Pictos (question + réponses)
+   Pictos question/réponses
    ========================= */
 function getQuestionPictoFiles(q) {
   if (Array.isArray(q?.pictos)) return q.pictos.filter(Boolean);
   const single = q?.pictogram || q?.picto || q?.pictogramme || "";
   return single ? [single] : [];
 }
-
 function getChoicePictoFile(choice) {
   return choice?.pictogram || choice?.picto || choice?.pictogramme || "";
 }
-
 function updateQuestionPictoTop(q) {
   if (!quizBox?.pictoWrap) return;
-
   const files = getQuestionPictoFiles(q);
 
   if (!files.length) {
@@ -744,12 +666,11 @@ function updateQuestionPictoTop(q) {
 
   quizBox.pictoWrap.style.display = "flex";
   quizBox.pictoWrap.innerHTML = "";
-
-  files.forEach((file) => {
+  files.forEach(file => {
     const img = document.createElement("img");
     img.className = "qPicto";
     img.src = getPictoSrc(file);
-    img.alt = q?.title ? `Pictogramme: ${q.title}` : "Pictogramme";
+    img.alt = "";
     img.loading = "lazy";
     img.addEventListener("error", () => (img.style.display = "none"));
     quizBox.pictoWrap.appendChild(img);
@@ -757,113 +678,26 @@ function updateQuestionPictoTop(q) {
 }
 
 /* =========================
-   12) Scale question (range)
-   ========================= */
-function renderScaleQuestion(q) {
-  const min = Number.isFinite(q.min) ? q.min : 1;
-  const max = Number.isFinite(q.max) ? q.max : 5;
-
-  const step =
-    q.step !== undefined && q.step !== null && q.step !== ""
-      ? String(q.step)
-      : "any";
-
-  const def = Number.isFinite(q.default) ? q.default : (min + max) / 2;
-
-  const saved = answers[q.id];
-  let value =
-    saved !== undefined && saved !== null && String(saved).trim() !== ""
-      ? Number(saved)
-      : def;
-
-  if (!Number.isFinite(value)) value = def;
-  value = Math.max(min, Math.min(max, value));
-
-  const wrap = document.createElement("div");
-  wrap.className = "scaleWrap";
-
-  const labels = Array.isArray(q.labels)
-    ? q.labels
-    : ["Très mal", "Mal", "Bof", "Bien", "Très bien"];
-
-  const facesDefault = ["😡", "☹️", "😐", "🙂", "😄"];
-  const facesCount = Math.min(5, Math.max(2, labels.length || 5));
-  const faces = facesDefault.slice(0, facesCount);
-
-  const facesRow = document.createElement("div");
-  facesRow.className = "scaleFaces";
-  facesRow.innerHTML = faces
-    .map((f) => `<div class="scaleFace" aria-hidden="true">${f}</div>`)
-    .join("");
-
-  const range = document.createElement("input");
-  range.type = "range";
-  range.min = String(min);
-  range.max = String(max);
-  range.step = step;
-  range.value = String(value);
-  range.className = "scaleRange";
-
-  range.addEventListener("input", () => {
-    const v = Number(range.value);
-    answers[q.id] = Number.isFinite(v) ? v : range.value;
-  });
-
-  answers[q.id] = Number(range.value);
-
-  const style = document.createElement("style");
-  style.textContent = `
-    .scaleWrap{margin-top:12px}
-    .scaleFaces{display:grid;grid-template-columns:repeat(${facesCount},1fr);gap:10px;margin:6px 0 12px}
-    .scaleFace{font-size:46px;display:flex;justify-content:center;align-items:center}
-    .scaleRange{width:100%; height:36px}
-  `;
-
-  wrap.appendChild(style);
-  wrap.appendChild(facesRow);
-  wrap.appendChild(range);
-
-  quizBox.choices.appendChild(wrap);
-}
-
-/* =========================
-   13) Audio (lecture question)
-   ========================= */
-function speakFR(text) {
-  if (!("speechSynthesis" in window)) {
-    alert("Audio non disponible sur ce navigateur.");
-    return;
-  }
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "fr-FR";
-  u.rate = 0.95;
-  u.pitch = 0.9;
-  window.speechSynthesis.speak(u);
-}
-
-function buildSpeechTextForQuestion(q) {
-  const type = q.type || "single";
-  if (type === "text") return `${q.title}. Réponse libre.`;
-  if (type === "scale") return `${q.title}. Déplace le curseur.`;
-
-  const choices = (q.choices || []).map((c) => c.label).join(". ");
-  return choices ? `${q.title}. Choix possibles : ${choices}.` : `${q.title}.`;
-}
-
-/* =========================
-   14) Dictée (micro)
+   Dictée (micro)
    ========================= */
 function getActiveTextArea() {
   return document.querySelector(".textAnswer");
 }
-
 function setMicUI(on) {
   listening = on;
   if (!quizBox?.mic) return;
   quizBox.mic.textContent = on ? "⏹️" : "🎤";
   quizBox.mic.classList.toggle("is-listening", on);
   quizBox.mic.title = on ? "Arrêter la dictée" : "Dicter la réponse";
+}
+
+function commitCurrentTextAnswerIfAny() {
+  if (!questionnaire) return;
+  const q = getCurrentQuestion();
+  if (!q) return;
+  if ((q?.type || "single") !== "text") return;
+  const ta = document.querySelector(".textAnswer");
+  if (ta) answers[q.id] = ta.value;
 }
 
 function setupSpeechRecognitionIfNeeded() {
@@ -884,7 +718,6 @@ function setupSpeechRecognitionIfNeeded() {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const chunk = (e.results[i][0]?.transcript || "").trim();
       if (!chunk) continue;
-
       if (e.results[i].isFinal) finalText += (finalText ? " " : "") + chunk;
       else interim += (interim ? " " : "") + chunk;
     }
@@ -894,7 +727,7 @@ function setupSpeechRecognitionIfNeeded() {
     if (finalText) {
       ta.value = (base + finalText).trim();
       const q = getCurrentQuestion();
-      answers[q.id] = ta.value;
+      if (q) answers[q.id] = ta.value;
       interimBaseValue = ta.value.trim();
     } else if (interim) {
       ta.value = (base + interim).trim();
@@ -903,9 +736,7 @@ function setupSpeechRecognitionIfNeeded() {
 
   recog.onerror = (e) => {
     setMicUI(false);
-    if (e?.error === "not-allowed") {
-      alert("Autorise l’accès au micro pour utiliser la dictée.");
-    }
+    if (e?.error === "not-allowed") alert("Autorise l’accès au micro pour utiliser la dictée.");
   };
 
   recog.onend = () => {
@@ -916,9 +747,9 @@ function setupSpeechRecognitionIfNeeded() {
 
 function toggleDictation() {
   const q = getCurrentQuestion();
-  const type = q.type || "single";
+  if (!q) return;
 
-  if (type !== "text") {
+  if ((q?.type || "single") !== "text") {
     alert("Le micro est disponible seulement pour les réponses libres.");
     return;
   }
@@ -943,36 +774,94 @@ function toggleDictation() {
       setMicUI(true);
     } catch (e) {}
   } else {
-    try {
-      recog.stop();
-    } catch (e) {}
+    try { recog.stop(); } catch (e) {}
     setMicUI(false);
     commitCurrentTextAnswerIfAny();
   }
 }
 
 /* =========================
-   15) Progress UI
+   Progress
    ========================= */
 function updateProgressUI() {
-  if (!quizBox?.progressFill || !questionnaire?.questions?.length) return;
+  if (!quizBox?.progressFill) return;
 
-  const total = questionnaire.questions.length;
+  const qs = safeQuestionsArray(questionnaire);
+  const total = qs.length;
+  if (!total) return;
+
   const current = Math.min(total, Math.max(1, qIndex + 1));
   const pct = Math.round((current / total) * 100);
 
   quizBox.progressText.textContent = `Question ${current}/${total}`;
   quizBox.progressPct.textContent = `${pct}%`;
   quizBox.progressFill.style.width = `${pct}%`;
-
-  if (quizBox.progressTrack) {
-    quizBox.progressTrack.setAttribute("aria-valuenow", String(pct));
-  }
+  quizBox.progressTrack?.setAttribute("aria-valuenow", String(pct));
 }
 
 /* =========================
-   16) UI Questionnaire (quizBox)
+   Questionnaire UI
    ========================= */
+function buildSpeechTextForQuestion(q) {
+  const type = q.type || "single";
+  if (type === "text") return `${q.title}. Réponse libre.`;
+  if (type === "scale") return `${q.title}. Déplace le curseur.`;
+
+  const choices = (q.choices || []).map(c => c.label).join(". ");
+  return choices ? `${q.title}. Choix possibles : ${choices}.` : `${q.title}.`;
+}
+
+function renderScaleQuestion(q) {
+  const min = Number.isFinite(q.min) ? q.min : 1;
+  const max = Number.isFinite(q.max) ? q.max : 5;
+  const step = (q.step !== undefined && q.step !== null && q.step !== "") ? String(q.step) : "any";
+  const def = Number.isFinite(q.default) ? q.default : (min + max) / 2;
+
+  const saved = answers[q.id];
+  let value = (saved !== undefined && saved !== null && String(saved).trim() !== "") ? Number(saved) : def;
+  if (!Number.isFinite(value)) value = def;
+  value = Math.max(min, Math.min(max, value));
+
+  const wrap = document.createElement("div");
+  wrap.className = "scaleWrap";
+
+  const labels = Array.isArray(q.labels) ? q.labels : ["Très mal", "Mal", "Bof", "Bien", "Très bien"];
+  const facesDefault = ["😡", "☹️", "😐", "🙂", "😄"];
+  const facesCount = Math.min(5, Math.max(2, labels.length || 5));
+  const faces = facesDefault.slice(0, facesCount);
+
+  const facesRow = document.createElement("div");
+  facesRow.className = "scaleFaces";
+  facesRow.innerHTML = faces.map(f => `<div class="scaleFace" aria-hidden="true">${f}</div>`).join("");
+
+  const range = document.createElement("input");
+  range.type = "range";
+  range.min = String(min);
+  range.max = String(max);
+  range.step = step;
+  range.value = String(value);
+  range.className = "scaleRange";
+
+  range.addEventListener("input", () => {
+    const v = Number(range.value);
+    answers[q.id] = Number.isFinite(v) ? v : range.value;
+  });
+  answers[q.id] = Number(range.value);
+
+  const style = document.createElement("style");
+  style.textContent = `
+    .scaleWrap{margin-top:12px}
+    .scaleFaces{display:grid;grid-template-columns:repeat(${facesCount},1fr);gap:10px;margin:6px 0 12px}
+    .scaleFace{font-size:46px;display:flex;justify-content:center;align-items:center}
+    .scaleRange{width:100%; height:36px}
+  `;
+
+  wrap.appendChild(style);
+  wrap.appendChild(facesRow);
+  wrap.appendChild(range);
+  quizBox.choices.appendChild(wrap);
+}
+
 function ensureQuizBox() {
   if (quizBox) return;
 
@@ -1009,42 +898,6 @@ function ensureQuizBox() {
     <p id="hint" class="out" aria-live="polite"></p>
   `;
 
-  const style = document.createElement("style");
-  style.textContent = `
-    .qPictoWrap{
-      margin:10px 0 6px;
-      display:flex;
-      justify-content:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .qPicto{height:70px; width:auto; object-fit:contain}
-
-    .choiceRow{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      margin:10px 0;
-    }
-    .choiceLabel{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      cursor:pointer;
-      flex:1;
-    }
-    .choicePicto{
-      height:44px;
-      width:44px;
-      object-fit:contain;
-      margin-left:auto;
-    }
-
-    .navRow3{display:flex; align-items:center; justify-content:space-between; gap:10px}
-    .centerActions{display:flex; align-items:center; justify-content:center; gap:10px; min-width:110px}
-  `;
-  card.appendChild(style);
-
   quizBox = {
     card,
     title: document.getElementById("qTitle"),
@@ -1064,12 +917,11 @@ function ensureQuizBox() {
 
   quizBox.speak.addEventListener("click", () => {
     const q = getCurrentQuestion();
+    if (!q) return;
     speakFR(buildSpeechTextForQuestion(q));
   });
 
-  quizBox.mic.addEventListener("click", () => {
-    toggleDictation();
-  });
+  quizBox.mic.addEventListener("click", () => toggleDictation());
 
   quizBox.prev.addEventListener("click", () => {
     commitCurrentTextAnswerIfAny();
@@ -1081,16 +933,30 @@ function ensureQuizBox() {
     commitCurrentTextAnswerIfAny();
 
     const q = getCurrentQuestion();
-    const required = q.required !== false;
+    if (!q) return;
+
     const val = answers[q.id];
 
-    if (required && (val === undefined || val === null || String(val).trim() === "")) {
-      quizBox.hint.textContent = "Réponds pour continuer.";
+    // Blocage universel : identité obligatoire
+    if (isIdentityQuestion(q) && !isAnswered(val)) {
+      quizBox.hint.textContent = "Nom / prénom / âge : obligatoire pour continuer.";
+      focusFirstAnswerField();
       return;
     }
+
+    // Blocage normal : required (par défaut true)
+    const required = q.required !== false;
+    if (required && !isAnswered(val)) {
+      quizBox.hint.textContent = "Réponds pour continuer.";
+      focusFirstAnswerField();
+      return;
+    }
+
     quizBox.hint.textContent = "";
 
-    const last = qIndex === questionnaire.questions.length - 1;
+    const qs = safeQuestionsArray(questionnaire);
+    const last = qIndex === qs.length - 1;
+
     if (last) renderSummary();
     else {
       qIndex++;
@@ -1099,9 +965,6 @@ function ensureQuizBox() {
   });
 }
 
-/* =========================
-   17) Render question
-   ========================= */
 function renderQuestion() {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
@@ -1111,7 +974,12 @@ function renderQuestion() {
   }
 
   const q = getCurrentQuestion();
-  quizBox.title.textContent = q.title;
+  if (!q) {
+    alert("Questionnaire vide ou invalide.");
+    return;
+  }
+
+  quizBox.title.textContent = q.title || "Question";
 
   updateQuestionPictoTop(q);
   quizBox.choices.innerHTML = "";
@@ -1121,8 +989,7 @@ function renderQuestion() {
   if (type === "scale") {
     renderScaleQuestion(q);
     quizBox.prev.disabled = qIndex === 0;
-    quizBox.next.textContent =
-      qIndex === questionnaire.questions.length - 1 ? "Terminer →" : "Suivant →";
+    quizBox.next.textContent = (qIndex === safeQuestionsArray(questionnaire).length - 1) ? "Terminer →" : "Suivant →";
     updateProgressUI();
     return;
   }
@@ -1133,11 +1000,7 @@ function renderQuestion() {
     textarea.rows = 4;
     textarea.placeholder = q.placeholder || "Écris ta réponse ici…";
     textarea.value = answers[q.id] || "";
-
-    textarea.addEventListener("input", () => {
-      answers[q.id] = textarea.value;
-    });
-
+    textarea.addEventListener("input", () => (answers[q.id] = textarea.value));
     quizBox.choices.appendChild(textarea);
   } else {
     const isMultiple = q.type === "multiple";
@@ -1155,20 +1018,17 @@ function renderQuestion() {
       input.name = q.id;
       input.id = id;
       input.value = c.value;
-
       input.checked = isMultiple ? selectedArray.includes(c.value) : c.value === selected;
 
       input.addEventListener("change", () => {
         if (isMultiple) {
           let arr = Array.isArray(answers[q.id]) ? [...answers[q.id]] : [];
-          if (input.checked) {
-            if (!arr.includes(c.value)) arr.push(c.value);
-          } else {
-            arr = arr.filter((v) => v !== c.value);
-          }
+          if (input.checked) { if (!arr.includes(c.value)) arr.push(c.value); }
+          else { arr = arr.filter(v => v !== c.value); }
           answers[q.id] = arr;
         } else {
           answers[q.id] = c.value;
+          // audio feedback optionnel (si tu veux): speakFR(c.label);
         }
       });
 
@@ -1198,14 +1058,12 @@ function renderQuestion() {
   }
 
   quizBox.prev.disabled = qIndex === 0;
-  quizBox.next.textContent =
-    qIndex === questionnaire.questions.length - 1 ? "Terminer →" : "Suivant →";
-
+  quizBox.next.textContent = (qIndex === safeQuestionsArray(questionnaire).length - 1) ? "Terminer →" : "Suivant →";
   updateProgressUI();
 }
 
 /* =========================
-   18) Récap + Envoi + Chrono
+   Récap + chrono + envoi
    ========================= */
 function formatDuration(ms) {
   const totalSec = Math.max(0, Math.round(ms / 1000));
@@ -1214,18 +1072,13 @@ function formatDuration(ms) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function getAnswerLabelForQuestion(q, val) {
+function getAnswerLabel(q, val) {
   const type = q.type || "single";
   const isMultiple = q.type === "multiple";
 
   if (type === "scale") {
     const labels = Array.isArray(q.labels) ? q.labels : null;
-    if (
-      labels &&
-      Number.isFinite(Number(val)) &&
-      Number.isFinite(Number(q.min)) &&
-      Number.isFinite(Number(q.max))
-    ) {
+    if (labels && Number.isFinite(Number(val)) && Number.isFinite(Number(q.min)) && Number.isFinite(Number(q.max))) {
       const min = Number(q.min);
       const max = Number(q.max);
       const n = Number(val);
@@ -1241,21 +1094,20 @@ function getAnswerLabelForQuestion(q, val) {
   if (isMultiple) {
     const selectedVals = Array.isArray(val) ? val : [];
     return selectedVals
-      .map((v) => (q.choices || []).find((c) => c.value === v)?.label)
+      .map(v => (q.choices || []).find(c => c.value === v)?.label)
       .filter(Boolean)
       .join("; ");
   }
 
-  return (q.choices || []).find((c) => c.value === val)?.label || "";
+  return (q.choices || []).find(c => c.value === val)?.label || "";
 }
 
-function getAnswerPictosForQuestion(q, val) {
+function getAnswerPictos(q, val) {
   const type = q.type || "single";
   const isMultiple = q.type === "multiple";
-
   if (type === "text" || type === "scale") return [];
 
-  const pick = (choiceVal) => (q.choices || []).find((c) => c.value === choiceVal);
+  const pick = (choiceVal) => (q.choices || []).find(c => c.value === choiceVal);
   if (isMultiple) {
     const arr = Array.isArray(val) ? val : [];
     return arr.map(v => getChoicePictoFile(pick(v))).filter(Boolean);
@@ -1265,28 +1117,25 @@ function getAnswerPictosForQuestion(q, val) {
 
 function renderSummary() {
   commitCurrentTextAnswerIfAny();
-
-  // stop chrono
   chronoEndMs = Date.now();
   const durationMs = chronoStartMs ? (chronoEndMs - chronoStartMs) : 0;
 
   const educatorId = select.value;
   const educLabel = badge.textContent;
 
-  const summary = questionnaire.questions.map((q) => {
-    const val = answers[q.id] ?? "";
-    const answerLabel = getAnswerLabelForQuestion(q, val);
+  const qs = safeQuestionsArray(questionnaire);
 
+  const summary = qs.map(q => {
+    const val = answers[q.id] ?? "";
     return {
       id: q.id,
       question: q.title,
-      answer: answerLabel,
+      answer: getAnswerLabel(q, val),
       qPictos: getQuestionPictoFiles(q),
-      aPictos: getAnswerPictosForQuestion(q, val),
+      aPictos: getAnswerPictos(q, val),
     };
   });
 
-  // UI recap style “questionnaire”
   quizBox.card.innerHTML = `
     <div id="pdfArea">
       <h2>Récapitulatif</h2>
@@ -1309,38 +1158,31 @@ function renderSummary() {
   `;
 
   const list = document.getElementById("summaryList");
-  summary.forEach((item) => {
-    const div = document.createElement("div");
-    div.className = "summaryCard";
-
+  summary.forEach(item => {
     const qPics = (item.qPictos || []).map(f => `
       <img src="${getPictoSrc(f)}" alt="" loading="lazy" onerror="this.style.display='none'"/>
     `).join("");
-
     const aPics = (item.aPictos || []).map(f => `
       <img src="${getPictoSrc(f)}" alt="" loading="lazy" onerror="this.style.display='none'"/>
     `).join("");
 
+    const div = document.createElement("div");
+    div.className = "summaryCard";
     div.innerHTML = `
-      <div class="summaryQTop">
+      <div class="summaryTop">
         <div style="flex:1;">
           <div class="summaryQTitle">${escapeHtml(item.question)}</div>
           <div class="summaryAnswer">${escapeHtml(item.answer || "")}</div>
         </div>
-
         <div class="summaryPictos" aria-hidden="true">
-          ${qPics}
-          ${aPics}
+          ${qPics}${aPics}
         </div>
       </div>
     `;
-
     list.appendChild(div);
   });
 
   document.getElementById("editBtn").addEventListener("click", () => {
-    // on revient au questionnaire sans casser ce qui existe :
-    // on reconstruit quizBox puis on affiche la question courante
     quizBox = null;
     ensureQuizBox();
     renderQuestion();
@@ -1357,14 +1199,13 @@ function renderSummary() {
         body: JSON.stringify({
           educatorId,
           educatorLabel: educLabel,
-          summary: summary.map(x => ({ question: x.question, answer: x.answer })), // format historique conservé
-          durationSeconds: Math.round(durationMs / 1000), // champ bonus (n’écrase rien)
+          summary: summary.map(x => ({ question: x.question, answer: x.answer })),
+          durationSeconds: Math.round(durationMs / 1000),
         }),
       });
 
       const txt = await res.text();
       if (!res.ok) throw new Error(txt || "Erreur d’envoi");
-
       hint.textContent = "Envoyé ✅";
     } catch (err) {
       hint.textContent = "Erreur d’envoi ❌";
@@ -1374,17 +1215,64 @@ function renderSummary() {
 }
 
 /* =========================
-   19) IMPORTANT :
-   - startBtn (poleStep) = garde-fou
+   Events steps
    ========================= */
-if (btnPoleContinue) {
-  btnPoleContinue.addEventListener("click", () => {
-    if (!selectedQuestionnaireKey) {
-      out.textContent = "Choisis d’abord un questionnaire.";
-      if (modeOverlay) modeOverlay.style.display = "flex";
-      disableEverythingBeforePick(true);
-      return;
-    }
-    out.textContent = "Clique sur un pôle pour continuer.";
-  });
+btnBack.addEventListener("click", () => {
+  // retour aux pôles (sans reset questionnaire choisi)
+  select.value = "";
+  updateBadge();
+  btnEducContinue.disabled = true;
+  showPoleStep();
+  out.textContent = "Clique sur un pôle pour continuer.";
+});
+
+btnEducContinue.addEventListener("click", async () => {
+  if (!selectedQuestionnaireKey) {
+    educOut.textContent = "Choisis d’abord un questionnaire.";
+    openOverlay();
+    return;
+  }
+  if (!selectedPole) {
+    educOut.textContent = "Choisis d’abord un pôle.";
+    showPoleStep();
+    return;
+  }
+  if (!select.value) {
+    educOut.textContent = "Merci de choisir le professionnel avant de continuer.";
+    return;
+  }
+
+  educOut.textContent = "";
+  await loadQuestionnaire();
+  if (!safeQuestionsArray(questionnaire).length) return;
+
+  ensureQuizBox();
+
+  chronoStartMs = Date.now();
+  chronoEndMs = 0;
+
+  qIndex = 0;
+  renderQuestion();
+});
+
+btnPoleContinue.addEventListener("click", () => {
+  if (!selectedQuestionnaireKey) {
+    out.textContent = "Choisis d’abord un questionnaire.";
+    openOverlay();
+    return;
+  }
+  out.textContent = "Clique sur un pôle pour continuer.";
+});
+
+/* =========================
+   Init
+   ========================= */
+function init() {
+  populateGroupsSelectCompat();
+  renderGroupCards(false);
+  showPoleStep();
+  out.textContent = "Choisis d’abord un questionnaire.";
+  initModeChoice();
 }
+
+init();
