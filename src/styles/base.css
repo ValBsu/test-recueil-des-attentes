@@ -1,14 +1,33 @@
 :root{
+  /* Typo charte (Arial) */
+  --font: Arial, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+
+  /* ===== Couleurs charte ===== */
+  --brand-green: #76b82a;      /* vert moyen */
+  --brand-green-dark: #1c6b24; /* vert foncé */
+  --brand-green-pale: #d0df8f; /* vert pâle */
+  --brand-duck: #557e82;       /* bleu canard */
+  --brand-water: #009e9c;      /* vert d’eau */
+  --brand-gray: #656a74;       /* gris */
+  --brand-rasp: #c6037f;       /* framboise */
+  --brand-yellow: #feca1d;     /* jaune */
+
+  /* ===== UI (dérivés) ===== */
   --bg:#f6f8fb;
   --surface:#ffffff;
   --text:#1b1f2a;
   --muted:#5b667a;
   --line:#e2e7f0;
 
-  /* Vert institutionnel (Adapei-like) */
-  --primary:#55a83a;
-  --primary-dark:#3f8f2a;
-  --primary-soft:#e8f6e3;
+  /* Garde tes noms de variables pour ne rien casser */
+  --primary: var(--brand-green);
+  --primary-dark: var(--brand-green-dark);
+  --primary-soft: color-mix(in srgb, var(--brand-green-pale) 65%, white 35%);
+
+  --focus: var(--brand-water);
+  --info: var(--brand-duck);
+  --danger: var(--brand-rasp);
+  --warning: var(--brand-yellow);
 
   --radius:18px;
   --radius-sm:12px;
@@ -22,7 +41,7 @@
 
 body{
   margin:0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-family: var(--font);
   background:var(--bg);
   color:var(--text);
 }

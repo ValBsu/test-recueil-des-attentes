@@ -12,8 +12,21 @@
 .btn:hover{ filter:brightness(.97); }
 
 .btn:focus{
-  outline:3px solid rgba(85,168,58,.35);
+  outline:3px solid color-mix(in srgb, var(--focus) 35%, transparent);
   outline-offset:2px;
+}
+
+/* Bouton secondaire (utilisé dans ton HTML) */
+.btn.secondary{
+  background:#fff;
+  color:var(--text);
+  border:1px solid rgba(0,0,0,.14);
+}
+
+.btn.secondary:hover{
+  filter:none;
+  box-shadow: 0 1px 0 rgba(16,24,40,.04),
+              0 14px 40px rgba(16,24,40,.10);
 }
 
 .field{
@@ -35,20 +48,21 @@ select{
 }
 
 select:focus{
-  outline:3px solid rgba(85,168,58,.25);
-  border-color:#bfe8b3;
+  outline:3px solid color-mix(in srgb, var(--focus) 28%, transparent);
+  border-color: color-mix(in srgb, var(--focus) 25%, white 75%);
 }
 
+/* Badge éducateur (charte) */
 .badge{
   display:inline-flex;
   align-items:center;
   gap:8px;
   padding:8px 12px;
   border-radius:999px;
-  background:var(--primary-soft);
-  border:1px solid #cde8c6;
-  color:var(--primary-dark);
-  font-weight:700;
+  background: color-mix(in srgb, var(--brand-green-pale) 55%, white 45%);
+  border:1px solid color-mix(in srgb, var(--brand-green) 30%, white 70%);
+  color: #0f2a14;
+  font-weight:800;
   font-size:.95rem;
 }
 
@@ -56,6 +70,7 @@ select:focus{
   color:var(--muted);
   margin-top:10px;
 }
+
 .navRow{
   display:flex;
   gap:10px;
@@ -102,11 +117,14 @@ select:focus{
   border-radius:var(--radius-sm);
   background:#fff;
 }
+
 .summaryItem{
   break-inside: avoid;
   page-break-inside: avoid;
 }
+
 #pdfArea{ padding: 6px; }
+
 .qHeader{
   display:flex;
   align-items:center;
@@ -125,9 +143,10 @@ select:focus{
 }
 
 .iconBtn:focus{
-  outline: 3px solid rgba(85,168,58,.35);
-  outline-offset: 2px;
+  outline:3px solid color-mix(in srgb, var(--focus) 35%, transparent);
+  outline-offset:2px;
 }
+
 .textAnswer{
   width:100%;
   border:1px solid var(--line);
@@ -137,6 +156,12 @@ select:focus{
   min-height:110px;
   resize:vertical;
 }
+
+.textAnswer:focus{
+  outline:3px solid color-mix(in srgb, var(--focus) 30%, transparent);
+  border-color: color-mix(in srgb, var(--focus) 25%, white 75%);
+}
+
 .qActions {
   display: flex;
   gap: 8px;
@@ -146,6 +171,7 @@ select:focus{
 .iconBtn.is-listening {
   transform: scale(1.08);
 }
+
 /* =========================
    PREMIUM+ (Apple-ish + wow)
    100% CSS, sans casser
@@ -165,8 +191,8 @@ select:focus{
   width: 180%;
   height: 220px;
   background:
-    radial-gradient(700px 120px at 18% 60%, rgba(85,168,58,.22), transparent 62%),
-    radial-gradient(500px 120px at 70% 30%, rgba(85,168,58,.14), transparent 60%),
+    radial-gradient(700px 120px at 18% 60%, rgba(118,184,42,.22), transparent 62%),
+    radial-gradient(500px 120px at 70% 30%, rgba(118,184,42,.14), transparent 60%),
     linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,0));
   transform: rotate(-2deg);
   pointer-events:none;
@@ -178,49 +204,9 @@ select:focus{
   z-index: 1;
 }
 
-/* 2) “Progress” indéterminé premium (discret) en haut de la card */
-.card::after{
-  content:"";
-  position:absolute;
-  left:18px;
-  right:18px;
-  top:14px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(16,24,40,.06);
-  overflow:hidden;
-  z-index: 1;
-}
+/* 2) (ancienne barre indéterminée) => on la désactive plus bas via “PROGRESS BAR ONLY” */
 
-/* barre animée */
-.card::after{
-  background:
-    linear-gradient(90deg,
-      rgba(16,24,40,.06),
-      rgba(16,24,40,.06)
-    );
-}
-.card::after{
-  /* on crée l’animation avec un “reflet” via background-image */
-  background-image:
-    linear-gradient(90deg,
-      rgba(16,24,40,.06) 0%,
-      rgba(16,24,40,.06) 35%,
-      rgba(85,168,58,.42) 50%,
-      rgba(16,24,40,.06) 65%,
-      rgba(16,24,40,.06) 100%
-    );
-  background-size: 220% 100%;
-  animation: premiumIndeterminate 2.2s ease-in-out infinite;
-}
-
-@keyframes premiumIndeterminate{
-  0%{ background-position: 0% 0; opacity:.85; }
-  50%{ opacity:1; }
-  100%{ background-position: 100% 0; opacity:.85; }
-}
-
-/* 3) Animation d’apparition des contenus (question/choices/récap) */
+/* 3) Animation d’apparition des contenus */
 #choices, .summaryList, #pdfArea{
   animation: fadeUp .28s ease both;
 }
@@ -230,8 +216,7 @@ select:focus{
   to{ opacity: 1; transform: translateY(0); }
 }
 
-/* 4) Réponses : “sélection” plus visible (sans dépendre d’un JS) */
-/* On stylise le input + label pour rendre la sélection premium */
+/* 4) Sélection plus visible */
 .choiceRow input[type="radio"],
 .choiceRow input[type="checkbox"]{
   width: 18px;
@@ -239,36 +224,36 @@ select:focus{
   accent-color: var(--primary);
 }
 
-/* Quand l’input est coché : on met un glow sur la carte */
+/* Quand l’input est coché : glow sur la carte */
 .choiceRow:has(input:checked){
-  border-color: rgba(85,168,58,.40);
+  border-color: color-mix(in srgb, var(--primary) 40%, white 60%);
   box-shadow: 0 1px 0 rgba(16,24,40,.04),
               0 16px 50px rgba(16,24,40,.12);
-  background: linear-gradient(180deg, rgba(85,168,58,.10), rgba(255,255,255,.92));
+  background: linear-gradient(180deg, rgba(118,184,42,.10), rgba(255,255,255,.92));
 }
 
-/* Petit “halo” à droite (chic) */
+/* Halo à droite */
 .choiceRow:has(input:checked)::after{
   content:"";
   position:absolute;
   inset:0;
   border-radius: inherit;
   pointer-events:none;
-  background: radial-gradient(260px 120px at 88% 50%, rgba(85,168,58,.18), transparent 55%);
+  background: radial-gradient(260px 120px at 88% 50%, rgba(118,184,42,.18), transparent 55%);
   opacity: .9;
 }
 
-/* Important : rendre .choiceRow positionnée pour son ::after */
+/* pour ::after */
 .choiceRow{ position: relative; }
 
-/* 5) Boutons : micro glow au hover (plus premium) */
+/* 5) Boutons : glow au hover */
 .btn:hover{
   box-shadow:
     0 1px 0 rgba(16,24,40,.04),
     0 22px 70px rgba(16,24,40,.14);
 }
 
-/* 6) Pictos : un peu plus “pop” mais soft */
+/* 6) Pictos */
 .qPicto{
   transform: translateZ(0);
 }
@@ -276,15 +261,15 @@ select:focus{
   padding-top: 2px;
 }
 
-/* 7) Accessibilité : réduit les animations si demandé */
+/* 7) Reduce motion */
 @media (prefers-reduced-motion: reduce){
-  .card::after{ animation: none; }
   #choices, .summaryList, #pdfArea{ animation: none; }
   .btn, .choiceRow, .iconBtn{ transition: none; }
 }
+
 /* =========================
    PROGRESS BAR ONLY + SPACING
-   -> à coller en bas de src/styles/components.css
+   -> conserve ton design actuel
    ========================= */
 
 /* Désactive l’ancienne barre indéterminée si tu l’avais via .card::after */
@@ -292,7 +277,7 @@ select:focus{
 
 /* On descend un peu le contenu (évite chevauchement) */
 .card{
-  padding-top: 22px; /* tu peux monter à 26 si besoin */
+  padding-top: 22px;
 }
 
 /* Barre uniquement */
@@ -314,10 +299,11 @@ select:focus{
   height: 100%;
   width: 0%;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(85,168,58,1), rgba(63,143,42,1));
-  box-shadow: 0 10px 20px rgba(85,168,58,.20);
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 10px 20px rgba(118,184,42,.20);
   transition: width .25s ease;
 }
+
 /* =========================
    From app.js (ex-injectStyles) — SAFE
    ========================= */
@@ -344,6 +330,14 @@ select:focus{
   cursor: pointer;
   text-align: left;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* Focus visible (accessibilité) */
+.group-card:focus,
+.educ-card:focus,
+.qSelectCard:focus{
+  outline: 3px solid color-mix(in srgb, var(--focus) 45%, transparent);
+  outline-offset: 3px;
 }
 
 .group-card:hover,
@@ -574,8 +568,7 @@ select:focus{
 }
 
 /* =========================
-   Scale question — ex style injecté dans renderScaleQuestion
-   (on fait une version responsive sans dépendre du "repeat(n)" JS)
+   Scale question
    ========================= */
 .scaleWrap {
   margin-top: 12px;
