@@ -224,110 +224,6 @@ function speakFR(text) {
 }
 
 /* =========================
-   Styles injectés (overlay + cards + recap)
-   ========================= */
-(function injectStyles() {
-  const style = document.createElement("style");
-  style.textContent = `
-    .group-grid, .educ-grid, .qSelectGrid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
-      gap:12px;
-      margin-top:8px;
-    }
-    .group-card, .educ-card, .qSelectCard{
-      display:flex; align-items:center; gap:12px;
-      padding:14px;
-      border:1px solid rgba(0,0,0,.12);
-      border-radius:16px;
-      background:#fff;
-      cursor:pointer;
-      text-align:left;
-      box-shadow: 0 6px 18px rgba(0,0,0,.06);
-    }
-    .group-card:hover, .educ-card:hover, .qSelectCard:hover{ transform: translateY(-1px); }
-    .group-card:active, .educ-card:active, .qSelectCard:active{transform:scale(.995)}
-    .group-card.is-selected, .educ-card.is-selected{outline:3px solid rgba(0,0,0,.22)}
-    .group-badge, .qSelectBadge{
-      width:42px;height:42px;
-      border-radius:12px;
-      background:rgba(0,0,0,.06);
-      display:flex; align-items:center; justify-content:center;
-      font-size:20px; flex:0 0 auto;
-    }
-    .group-name{font-weight:900}
-    .educ-photo{width:56px;height:56px;border-radius:50%;object-fit:cover;background:rgba(0,0,0,.06);flex:0 0 auto;}
-    .educ-name{font-weight:900}
-    .educ-role{opacity:.85}
-
-    #modeOverlay{
-      position:fixed; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      padding:12px;
-      background:rgba(255,255,255,.92);
-      backdrop-filter: blur(2px);
-      z-index: 9999;
-    }
-    .modePanel{
-      width: min(1100px, 100%);
-      border:1px solid rgba(0,0,0,.12);
-      border-radius:16px;
-      padding:14px;
-      background:#fff;
-      box-shadow: 0 10px 30px rgba(0,0,0,.10);
-    }
-    .modeTitle{margin:0 0 8px}
-    .modeHint{margin:0 0 10px; opacity:.8}
-    .qSelectGrid{
-      grid-template-columns: repeat(3, minmax(220px, 1fr));
-      gap:10px;
-    }
-    .qSelectCard{ padding:12px; }
-    .qSelectTitle{font-weight:900}
-    .qSelectHint{opacity:.8; font-size:.95em}
-    @media (max-width: 900px){
-      .qSelectGrid{ grid-template-columns: repeat(2, minmax(210px, 1fr)); }
-    }
-    @media (max-width: 560px){
-      .qSelectGrid{ grid-template-columns: 1fr; }
-    }
-
-    .summaryList{display:flex; flex-direction:column; gap:12px; margin-top:12px}
-    .summaryCard{
-      border:1px solid rgba(0,0,0,.12);
-      border-radius:16px;
-      padding:12px;
-      background:#fff;
-      box-shadow: 0 6px 18px rgba(0,0,0,.05);
-    }
-    .summaryTop{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
-    .summaryQTitle{font-weight:900; margin:0 0 6px}
-    .summaryAnswer{opacity:.95}
-    .summaryPictos{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
-    .summaryPictos img{height:52px; width:auto; object-fit:contain}
-    .summaryMeta{margin-top:10px; display:flex; gap:10px; flex-wrap:wrap}
-    .metaChip{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 10px;
-      border:1px solid rgba(0,0,0,.12);
-      border-radius:999px;
-      background:rgba(0,0,0,.03);
-      font-weight:700;
-    }
-
-    .qPictoWrap{margin:10px 0 6px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
-    .qPicto{height:70px; width:auto; object-fit:contain}
-    .choiceRow{display:flex;align-items:center;gap:10px;margin:10px 0;}
-    .choiceLabel{display:flex;align-items:center;gap:10px;cursor:pointer;flex:1;}
-    .choicePicto{height:44px;width:44px;object-fit:contain;margin-left:auto;}
-    .navRow3{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .centerActions{display:flex;align-items:center;justify-content:center;gap:10px;min-width:110px}
-
-  `;
-  document.head.appendChild(style);
-})();
-
-/* =========================
    FALC header (icône en haut)
    ========================= */
 function findHeaderContainerFrom(el) {
@@ -363,7 +259,6 @@ function ensureFalcInHeader() {
   falcHeaderImg.addEventListener("error", () => (falcHeaderImg.style.display = "none"));
 
   headerEl.appendChild(falcHeaderImg);
-
 }
 
 function updateBadge() {
@@ -881,15 +776,6 @@ function renderScaleQuestion(q) {
   });
   answers[q.id] = Number(range.value);
 
-  const style = document.createElement("style");
-  style.textContent = `
-    .scaleWrap{margin-top:12px}
-    .scaleFaces{display:grid;grid-template-columns:repeat(${facesCount},1fr);gap:10px;margin:6px 0 12px}
-    .scaleFace{font-size:46px;display:flex;justify-content:center;align-items:center}
-    .scaleRange{width:100%; height:36px}
-  `;
-
-  wrap.appendChild(style);
   wrap.appendChild(facesRow);
   wrap.appendChild(range);
   quizBox.choices.appendChild(wrap);
