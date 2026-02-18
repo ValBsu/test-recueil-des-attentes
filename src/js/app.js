@@ -67,7 +67,7 @@ const DEFAULT_EDUC_PHOTO = "./src/assets/avatar.png";
 
 const EDUCATORS = [
   { name: "Alexis Plessis", role: "Éducateur spécialisé", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "alexis" },
-  { name: "Morgan Dehaies", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "morgane" },
+  { name: "Morgane Dehaies", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "morgane" },
   { name: "Camille Rouillé", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "camille" },
   { name: "Marina Trottier", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "marina" },
   { name: "Lucile Charrier", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "lucile" },
@@ -102,16 +102,15 @@ const GROUPS = Array.from(new Set(EDUCATORS.map(e => e.group)));
 
 const QUESTIONNAIRES = [
   { key: "famille", label: "Questionnaire Famille", hint: "Parents / responsables", icon: "👨‍👩‍👧‍👦", path: "./src/data/questionnaire_famille.json" },
-  { key: "jeunes", label: "Questionnaire Jeunes", hint: "Pour le jeune", icon: "🧒", path: "./src/data/questionnaire.json" },
 
-  { key: "pole_accueil", label: "Pôle accueil", hint: "Questionnaire du pôle", icon: "🏠", path: "./src/data/questionnaire_PA.json", fixedPole: "Pôle accueil" },
+  { key: "pole_accueil", label: "Pôle accueil", hint: "Questionnaire Pôle Accueil", icon: "🏠", path: "./src/data/questionnaire_PA.json", fixedPole: "Pôle accueil" },
   // ⚠️ IMPORTANT: vérifie le vrai nom du fichier sur ton disque.
   // Si ton fichier s'appelle encore questionnaire.PP.json, remets-le. Sinon laisse questionnaire_PP.json.
-  { key: "pole_projet", label: "Pôle projet", hint: "Questionnaire du pôle", icon: "🧩", path: "./src/data/questionnaire_PP.json", fixedPole: "Pôle projet" },
-  { key: "pole_sortie", label: "Pôle sortie", hint: "Questionnaire du pôle", icon: "🚌", path: "./src/data/questionnaire_PS.json", fixedPole: "Pôle sortie" },
+  { key: "pole_projet", label: "Pôle projet", hint: "Questionnaire Pôle Projet", icon: "🧩", path: "./src/data/questionnaire_PP.json", fixedPole: "Pôle projet" },
+  { key: "pole_sortie", label: "Pôle sortie", hint: "Questionnaire Pôle Sortie", icon: "🚌", path: "./src/data/questionnaire_PS.json", fixedPole: "Pôle sortie" },
 
-  { key: "unite_transversale", label: "Unité transversale", hint: "Questionnaire unité", icon: "🔄", path: "./src/data/questionnaire_UT.json", fixedPole: "Unité transversale" },
-  { key: "unite_specifique", label: "Unité spécifique", hint: "Questionnaire unité", icon: "🎯", path: "./src/data/questionnaire_US.json", fixedPole: "Unité spécifique" },
+  { key: "unite_transversale", label: "Unité transversale", hint: "Questionnaire Unité Transversale", icon: "🔄", path: "./src/data/questionnaire_UT.json", fixedPole: "Unité transversale" },
+  { key: "unite_specifique", label: "Unité spécifique", hint: "Questionnaire Unité Spécifique", icon: "🎯", path: "./src/data/questionnaire_US.json", fixedPole: "Unité spécifique" },
 ];
 
 /* =========================
@@ -323,6 +322,7 @@ function speakFR(text) {
     .choicePicto{height:44px;width:44px;object-fit:contain;margin-left:auto;}
     .navRow3{display:flex;align-items:center;justify-content:space-between;gap:10px}
     .centerActions{display:flex;align-items:center;justify-content:center;gap:10px;min-width:110px}
+
   `;
   document.head.appendChild(style);
 })();
@@ -363,6 +363,7 @@ function ensureFalcInHeader() {
   falcHeaderImg.addEventListener("error", () => (falcHeaderImg.style.display = "none"));
 
   headerEl.appendChild(falcHeaderImg);
+
 }
 
 function updateBadge() {
@@ -477,6 +478,38 @@ function resetForNewQuestionnaire(item) {
     : "Choisis d’abord le pôle.";
 
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+
+/* --- Recommencer total (SAFE) --- */
+function hardRestart() {
+  // relance l’app depuis le tout début (overlay)
+  selectedQuestionnaireKey = null;
+  questionnairePath = "./src/data/questionnaire.json";
+  questionnaire = null;
+
+  fixedPoleFromOverlay = "";
+  selectedPole = "";
+  qIndex = 0;
+  answers = {};
+  quizBox = null;
+
+  chronoStartMs = 0;
+  chronoEndMs = 0;
+
+  // reset educator
+  select.innerHTML = `<option value="">— Sélectionner —</option>`;
+  select.value = "";
+  updateBadge();
+  educGrid.innerHTML = "";
+
+  // reset pôles
+  renderGroupCards(false);
+  showPoleStep();
+  out.textContent = "Choisis d’abord un questionnaire.";
+
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+
+  openOverlay();
 }
 
 function onPickQuestionnaire(item) {
@@ -1023,12 +1056,18 @@ function renderQuestion() {
       input.addEventListener("change", () => {
         if (isMultiple) {
           let arr = Array.isArray(answers[q.id]) ? [...answers[q.id]] : [];
-          if (input.checked) { if (!arr.includes(c.value)) arr.push(c.value); }
-          else { arr = arr.filter(v => v !== c.value); }
+          if (input.checked) {
+            if (!arr.includes(c.value)) arr.push(c.value);
+            // ✅ énonce seulement quand on coche
+            speakFR(c.label);
+          } else {
+            arr = arr.filter(v => v !== c.value);
+          }
           answers[q.id] = arr;
         } else {
           answers[q.id] = c.value;
-          // audio feedback optionnel (si tu veux): speakFR(c.label);
+          // ✅ énonce à chaque sélection radio
+          speakFR(c.label);
         }
       });
 
