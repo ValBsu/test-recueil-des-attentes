@@ -4,7 +4,7 @@
    2) Choisir pôle (uniquement pôles visibles)
    3) Choisir pro (uniquement pros)
    4) Questionnaire (audio, dictée, pictos, progress)
-   5) Récap (chrono + pictos) + envoi netlify
+   5) Récap (chrono + pictos) + envoi Netlify Forms (fallback Resend conservé mais désactivé par défaut)
 */
 
 "use strict";
@@ -34,6 +34,17 @@ const educOut = document.getElementById("educOut");
    ========================= */
 const PICTOS_BASE_PATH = "./src/assets/pictos/";
 const EDUC_FALC_PICTO_FILE = "FALC.jpg";
+
+/**
+ * ✅ MODE D’ENVOI
+ * - "netlify" : envoi via Netlify Forms (GRATUIT) -> nécessite des <form netlify> statiques dans le HTML
+ * - "resend"  : envoi via /.netlify/functions/submit (PDF + Resend) -> gardé en secours
+ */
+const SEND_MODE = "netlify";
+
+// IMPORTANT: préfixe des forms Netlify
+// Ton HTML devra contenir : <form name="recueil-alexis-plessis" netlify hidden>...
+const NETLIFY_FORM_PREFIX = "recueil-";
 
 let falcHeaderImg = null;
 
@@ -104,8 +115,6 @@ const QUESTIONNAIRES = [
   { key: "famille", label: "Questionnaire Famille", hint: "Parents / responsables", icon: "👨‍👩‍👧‍👦", path: "./src/data/questionnaire_famille.json" },
 
   { key: "pole_accueil", label: "Pôle accueil", hint: "Questionnaire Pôle Accueil", icon: "🏠", path: "./src/data/questionnaire_PA.json", fixedPole: "Pôle accueil" },
-  // ⚠️ IMPORTANT: vérifie le vrai nom du fichier sur ton disque.
-  // Si ton fichier s'appelle encore questionnaire.PP.json, remets-le. Sinon laisse questionnaire_PP.json.
   { key: "pole_projet", label: "Pôle projet", hint: "Questionnaire Pôle Projet", icon: "🧩", path: "./src/data/questionnaire_PP.json", fixedPole: "Pôle projet" },
   { key: "pole_sortie", label: "Pôle sortie", hint: "Questionnaire Pôle Sortie", icon: "🚌", path: "./src/data/questionnaire_PS.json", fixedPole: "Pôle sortie" },
 
@@ -149,9 +158,15 @@ function getCurrentQuestion() {
   return qs[qIndex];
 }
 
+/* --- URL-encode for Netlify Forms --- */
+function encodeForm(data) {
+  return Object.keys(data)
+    .map((k) => encodeURIComponent(k) + "=" + encodeURIComponent(data[k]))
+    .join("&");
+}
+
 /* =========================
    Identité obligatoire (Nom/Prénom/Âge)
-   - SAFE: auto-détection par id OU titre
    ========================= */
 function isIdentityQuestion(q) {
   const id = String(q?.id || "").toLowerCase();
@@ -163,7 +178,6 @@ function isIdentityQuestion(q) {
   const isLast  = has(id, "nom") || (has(title, "nom") && !has(title, "prénom", "prenom"));
   const isAge   = has(id, "age", "âge") || has(title, "âge", "age");
 
-  // évite les faux positifs (ex: "nom du référent")
   const forbidden = has(title, "référent", "referent", "educateur", "éducateur", "professionnel", "pôle", "pole");
   if (forbidden) return false;
 
@@ -224,7 +238,7 @@ function speakFR(text) {
 }
 
 /* =========================
-   FALC header (icône en haut)
+   FALC header
    ========================= */
 function findHeaderContainerFrom(el) {
   if (!el) return null;
@@ -290,10 +304,8 @@ function showEducStep() {
    Overlay questionnaires
    ========================= */
 function setBeforePickState(disabled) {
-  // on bloque les interactions essentielles tant que pas de questionnaire
   select.disabled = disabled;
   btnEducContinue.disabled = true;
-  // le bouton "Continuer" des pôles sert juste de rappel
   btnPoleContinue.disabled = false;
 }
 
@@ -358,13 +370,11 @@ function resetForNewQuestionnaire(item) {
   chronoStartMs = 0;
   chronoEndMs = 0;
 
-  // reset educator
   select.innerHTML = `<option value="">— Sélectionner —</option>`;
   select.value = "";
   updateBadge();
   educGrid.innerHTML = "";
 
-  // rendu pôles cliquables
   renderGroupCards(true);
   showPoleStep();
 
@@ -375,9 +385,7 @@ function resetForNewQuestionnaire(item) {
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
-/* --- Recommencer total (SAFE) --- */
 function hardRestart() {
-  // relance l’app depuis le tout début (overlay)
   selectedQuestionnaireKey = null;
   questionnairePath = "./src/data/questionnaire.json";
   questionnaire = null;
@@ -391,13 +399,11 @@ function hardRestart() {
   chronoStartMs = 0;
   chronoEndMs = 0;
 
-  // reset educator
   select.innerHTML = `<option value="">— Sélectionner —</option>`;
   select.value = "";
   updateBadge();
   educGrid.innerHTML = "";
 
-  // reset pôles
   renderGroupCards(false);
   showPoleStep();
   out.textContent = "Choisis d’abord un questionnaire.";
@@ -526,7 +532,6 @@ function renderGroupCards(enabled) {
 
       highlightSelectedPoleCard(g);
 
-      // bascule vers pros
       select.value = "";
       updateBadge();
       btnEducContinue.disabled = true;
@@ -856,14 +861,12 @@ function ensureQuizBox() {
 
     const val = answers[q.id];
 
-    // Blocage universel : identité obligatoire
     if (isIdentityQuestion(q) && !isAnswered(val)) {
       quizBox.hint.textContent = "Nom / prénom / âge : obligatoire pour continuer.";
       focusFirstAnswerField();
       return;
     }
 
-    // Blocage normal : required (par défaut true)
     const required = q.required !== false;
     if (required && !isAnswered(val)) {
       quizBox.hint.textContent = "Réponds pour continuer.";
@@ -944,7 +947,6 @@ function renderQuestion() {
           let arr = Array.isArray(answers[q.id]) ? [...answers[q.id]] : [];
           if (input.checked) {
             if (!arr.includes(c.value)) arr.push(c.value);
-            // ✅ énonce seulement quand on coche
             speakFR(c.label);
           } else {
             arr = arr.filter(v => v !== c.value);
@@ -952,7 +954,6 @@ function renderQuestion() {
           answers[q.id] = arr;
         } else {
           answers[q.id] = c.value;
-          // ✅ énonce à chaque sélection radio
           speakFR(c.label);
         }
       });
@@ -1040,6 +1041,48 @@ function getAnswerPictos(q, val) {
   return [getChoicePictoFile(pick(val))].filter(Boolean);
 }
 
+async function sendViaNetlifyForms({ educatorId, educLabel, durationMs, summary }) {
+  const formName = `${NETLIFY_FORM_PREFIX}${educatorId}`;
+
+  const payload = {
+    "form-name": formName,
+    educatorId,
+    educatorLabel: educLabel,
+    durationSeconds: String(Math.round(durationMs / 1000)),
+    // on envoie une version simple (texte) pour que l’email soit lisible
+    summaryText: summary.map(x => `${x.question} : ${x.answer}`).join("\n"),
+    // et une version JSON si tu veux archiver / retraiter
+    summaryJson: JSON.stringify(summary),
+  };
+
+  const res = await fetch("/", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: encodeForm(payload),
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(txt || `Netlify Forms error (${res.status})`);
+  }
+}
+
+async function sendViaResendFunction({ educatorId, educLabel, durationMs, summary }) {
+  const res = await fetch("/.netlify/functions/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      educatorId,
+      educatorLabel: educLabel,
+      summary: summary.map(x => ({ question: x.question, answer: x.answer })),
+      durationSeconds: Math.round(durationMs / 1000),
+    }),
+  });
+
+  const txt = await res.text();
+  if (!res.ok) throw new Error(txt || "Erreur d’envoi");
+}
+
 function renderSummary() {
   commitCurrentTextAnswerIfAny();
   chronoEndMs = Date.now();
@@ -1076,7 +1119,7 @@ function renderSummary() {
 
     <div class="navRow" style="margin-top:14px;">
       <button class="btn secondary" id="editBtn" type="button">← Modifier</button>
-      <button class="btn" id="sendBtn" type="button">✉️ Envoyer au référent</button>
+      <button class="btn" id="sendBtn" type="button">✉️ Envoyer</button>
     </div>
 
     <p class="out" id="sendHint"></p>
@@ -1118,23 +1161,18 @@ function renderSummary() {
     hint.textContent = "Envoi en cours…";
 
     try {
-      const res = await fetch("/.netlify/functions/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          educatorId,
-          educatorLabel: educLabel,
-          summary: summary.map(x => ({ question: x.question, answer: x.answer })),
-          durationSeconds: Math.round(durationMs / 1000),
-        }),
-      });
+      if (!educatorId) throw new Error("Aucun éducateur sélectionné.");
 
-      const txt = await res.text();
-      if (!res.ok) throw new Error(txt || "Erreur d’envoi");
-      hint.textContent = "Envoyé ✅";
+      if (SEND_MODE === "netlify") {
+        await sendViaNetlifyForms({ educatorId, educLabel, durationMs, summary });
+        hint.textContent = "Envoyé via Netlify ✅";
+      } else {
+        await sendViaResendFunction({ educatorId, educLabel, durationMs, summary });
+        hint.textContent = "Envoyé ✅";
+      }
     } catch (err) {
       hint.textContent = "Erreur d’envoi ❌";
-      alert("Erreur d’envoi ❌\n" + err.message);
+      alert("Erreur d’envoi ❌\n" + (err?.message || err));
     }
   });
 }
@@ -1143,7 +1181,6 @@ function renderSummary() {
    Events steps
    ========================= */
 btnBack.addEventListener("click", () => {
-  // retour aux pôles (sans reset questionnaire choisi)
   select.value = "";
   updateBadge();
   btnEducContinue.disabled = true;
