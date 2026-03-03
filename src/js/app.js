@@ -4,7 +4,7 @@
    2) Choisir pôle (uniquement pôles visibles)
    3) Choisir pro (uniquement pros)
    4) Questionnaire (audio, dictée, pictos, progress)
-   5) Récap (chrono + pictos) + envoi Netlify Forms (fallback Resend conservé mais désactivé par défaut)
+   5) Récap (chrono + pictos) + envoi netlify + téléchargement PDF (SCREEN IDENTIQUE)
 */
 
 "use strict";
@@ -35,19 +35,7 @@ const educOut = document.getElementById("educOut");
 const PICTOS_BASE_PATH = "./src/assets/pictos/";
 const EDUC_FALC_PICTO_FILE = "FALC.jpg";
 
-/**
- * ✅ MODE D’ENVOI
- * - "netlify" : envoi via Netlify Forms (GRATUIT) -> nécessite des <form netlify> statiques dans le HTML
- * - "resend"  : envoi via /.netlify/functions/submit (PDF + Resend) -> gardé en secours
- */
-const SEND_MODE = "netlify";
-
-// IMPORTANT: préfixe des forms Netlify
-// Ton HTML devra contenir : <form name="recueil-alexis-plessis" netlify hidden>...
-const NETLIFY_FORM_PREFIX = "recueil-";
-
 let falcHeaderImg = null;
-
 let modeOverlay = null;
 
 let selectedQuestionnaireKey = null;
@@ -158,13 +146,6 @@ function getCurrentQuestion() {
   return qs[qIndex];
 }
 
-/* --- URL-encode for Netlify Forms --- */
-function encodeForm(data) {
-  return Object.keys(data)
-    .map((k) => encodeURIComponent(k) + "=" + encodeURIComponent(data[k]))
-    .join("&");
-}
-
 /* =========================
    Identité obligatoire (Nom/Prénom/Âge)
    ========================= */
@@ -201,7 +182,7 @@ function focusFirstAnswerField() {
 }
 
 /* =========================
-   Audio (cards)
+   Audio
    ========================= */
 let lastSpokenText = "";
 let speakTimer = null;
@@ -238,7 +219,7 @@ function speakFR(text) {
 }
 
 /* =========================
-   FALC header
+   FALC header (icône en haut)
    ========================= */
 function findHeaderContainerFrom(el) {
   if (!el) return null;
@@ -370,6 +351,7 @@ function resetForNewQuestionnaire(item) {
   chronoStartMs = 0;
   chronoEndMs = 0;
 
+  // reset educator
   select.innerHTML = `<option value="">— Sélectionner —</option>`;
   select.value = "";
   updateBadge();
@@ -383,34 +365,6 @@ function resetForNewQuestionnaire(item) {
     : "Choisis d’abord le pôle.";
 
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-}
-
-function hardRestart() {
-  selectedQuestionnaireKey = null;
-  questionnairePath = "./src/data/questionnaire.json";
-  questionnaire = null;
-
-  fixedPoleFromOverlay = "";
-  selectedPole = "";
-  qIndex = 0;
-  answers = {};
-  quizBox = null;
-
-  chronoStartMs = 0;
-  chronoEndMs = 0;
-
-  select.innerHTML = `<option value="">— Sélectionner —</option>`;
-  select.value = "";
-  updateBadge();
-  educGrid.innerHTML = "";
-
-  renderGroupCards(false);
-  showPoleStep();
-  out.textContent = "Choisis d’abord un questionnaire.";
-
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-
-  openOverlay();
 }
 
 function onPickQuestionnaire(item) {
@@ -509,11 +463,12 @@ function renderGroupCards(enabled) {
     card.style.opacity = (enabled && isAllowed) ? "" : "0.45";
     card.style.cursor = (enabled && isAllowed) ? "" : "not-allowed";
 
-    const icon = g.includes("accueil") ? "🏠"
-      : g.includes("projet") ? "🧩"
-      : g.includes("sortie") ? "🚌"
-      : g.includes("transversale") ? "🔄"
-      : g.includes("spécifique") ? "🎯"
+    const gl = g.toLowerCase();
+    const icon = gl.includes("accueil") ? "🏠"
+      : gl.includes("projet") ? "🧩"
+      : gl.includes("sortie") ? "🚌"
+      : gl.includes("transversale") ? "🔄"
+      : gl.includes("specifique") || gl.includes("spécifique") ? "🎯"
       : "🏷️";
 
     card.innerHTML = `
@@ -747,8 +702,8 @@ function buildSpeechTextForQuestion(q) {
 function renderScaleQuestion(q) {
   const min = Number.isFinite(q.min) ? q.min : 1;
   const max = Number.isFinite(q.max) ? q.max : 5;
-  const step = (q.step !== undefined && q.step !== null && q.step !== "") ? String(q.step) : "any";
-  const def = Number.isFinite(q.default) ? q.default : (min + max) / 2;
+  const step = (q.step !== undefined && q.step !== null && q.step !== "") ? String(q.step) : "1";
+  const def = Number.isFinite(q.default) ? q.default : Math.round((min + max) / 2);
 
   const saved = answers[q.id];
   let value = (saved !== undefined && saved !== null && String(saved).trim() !== "") ? Number(saved) : def;
@@ -1041,46 +996,93 @@ function getAnswerPictos(q, val) {
   return [getChoicePictoFile(pick(val))].filter(Boolean);
 }
 
-async function sendViaNetlifyForms({ educatorId, educLabel, durationMs, summary }) {
-  const formName = `${NETLIFY_FORM_PREFIX}${educatorId}`;
-
-  const payload = {
-    "form-name": formName,
-    educatorId,
-    educatorLabel: educLabel,
-    durationSeconds: String(Math.round(durationMs / 1000)),
-    // on envoie une version simple (texte) pour que l’email soit lisible
-    summaryText: summary.map(x => `${x.question} : ${x.answer}`).join("\n"),
-    // et une version JSON si tu veux archiver / retraiter
-    summaryJson: JSON.stringify(summary),
-  };
-
-  const res = await fetch("/", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: encodeForm(payload),
-  });
-
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(txt || `Netlify Forms error (${res.status})`);
-  }
+/* =========================
+   PDF — VRAI SCREEN IDENTIQUE
+   -> PDF à la taille exacte de la capture (pas A4)
+   ========================= */
+function getJsPDFCtor() {
+  return (window.jspdf && window.jspdf.jsPDF) || window.jsPDF || null;
 }
 
-async function sendViaResendFunction({ educatorId, educLabel, durationMs, summary }) {
-  const res = await fetch("/.netlify/functions/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      educatorId,
-      educatorLabel: educLabel,
-      summary: summary.map(x => ({ question: x.question, answer: x.answer })),
-      durationSeconds: Math.round(durationMs / 1000),
-    }),
-  });
+async function waitForImages(container) {
+  const imgs = Array.from(container.querySelectorAll("img"));
+  await Promise.all(imgs.map(img => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    if (img.decode) return img.decode().catch(() => {});
+    return new Promise(resolve => {
+      img.onload = () => resolve();
+      img.onerror = () => resolve();
+    });
+  }));
+}
 
-  const txt = await res.text();
-  if (!res.ok) throw new Error(txt || "Erreur d’envoi");
+async function downloadPdfFromArea(areaEl, fileName) {
+  if (!areaEl) {
+    alert("PDF indisponible : zone à exporter introuvable.");
+    return;
+  }
+
+  const html2canvas = window.html2canvas;
+  const JsPDF = getJsPDFCtor();
+
+  // PLAN A : SCREEN IDENTIQUE (recommandé)
+  if (typeof html2canvas !== "undefined" && JsPDF) {
+    try {
+      // Attendre polices + images
+      try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+      await waitForImages(areaEl);
+
+      // dimensions EXACTES de la zone (évite reflow)
+      const rect = areaEl.getBoundingClientRect();
+
+      // scale haute qualité (sans exploser la mémoire)
+      const dpr = window.devicePixelRatio || 1;
+      const scale = Math.min(4, Math.max(2, dpr * 2));
+
+      const canvas = await html2canvas(areaEl, {
+        scale,
+        useCORS: true,
+        backgroundColor: null, // ✅ garde le vrai fond / couleurs du récap
+        logging: false,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        windowWidth: Math.ceil(rect.width),
+        windowHeight: Math.ceil(rect.height),
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      // ✅ PDF À LA TAILLE EXACTE DU SCREEN (aucune déformation A4)
+      const pdf = new JsPDF({
+        orientation: canvas.width >= canvas.height ? "l" : "p",
+        unit: "px",
+        format: [canvas.width, canvas.height],
+      });
+
+      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height, undefined, "FAST");
+      pdf.save(fileName || "recap.pdf");
+      return;
+    } catch (e) {
+      console.warn("PDF Plan A (screen identique) a échoué, fallback html2pdf.", e);
+    }
+  }
+
+  // PLAN B : html2pdf (fallback seulement)
+  if (typeof window.html2pdf === "undefined") {
+    alert("PDF indisponible : librairie PDF non chargée.");
+    return;
+  }
+
+  const opt = {
+    margin: 8,
+    filename: fileName || "recap.pdf",
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 3, useCORS: true, backgroundColor: "#ffffff" },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["css", "legacy"] },
+  };
+
+  window.html2pdf().set(opt).from(areaEl).save();
 }
 
 function renderSummary() {
@@ -1117,9 +1119,10 @@ function renderSummary() {
       <div class="summaryList" id="summaryList"></div>
     </div>
 
-    <div class="navRow" style="margin-top:14px;">
+    <div class="navRow" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn secondary" id="editBtn" type="button">← Modifier</button>
-      <button class="btn" id="sendBtn" type="button">✉️ Envoyer</button>
+      <button class="btn secondary" id="pdfBtn" type="button">📄 Télécharger le PDF</button>
+      <button class="btn" id="sendBtn" type="button">✉️ Envoyer au référent</button>
     </div>
 
     <p class="out" id="sendHint"></p>
@@ -1156,20 +1159,38 @@ function renderSummary() {
     renderQuestion();
   });
 
+  document.getElementById("pdfBtn").addEventListener("click", async () => {
+    const pdfArea = document.getElementById("pdfArea");
+    const safeEduc = normalizeId(educLabel || "educateur") || "educateur";
+    const stamp = new Date().toISOString().slice(0, 10);
+    const filename = `recap_${safeEduc}_${stamp}.pdf`;
+
+    try {
+      await downloadPdfFromArea(pdfArea, filename);
+    } catch (e) {
+      alert("Erreur génération PDF ❌\n" + (e?.message || e));
+    }
+  });
+
   document.getElementById("sendBtn").addEventListener("click", async () => {
     const hint = document.getElementById("sendHint");
     hint.textContent = "Envoi en cours…";
 
     try {
-      if (!educatorId) throw new Error("Aucun éducateur sélectionné.");
+      const res = await fetch("/.netlify/functions/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          educatorId,
+          educatorLabel: educLabel,
+          summary: summary.map(x => ({ question: x.question, answer: x.answer })),
+          durationSeconds: Math.round(durationMs / 1000),
+        }),
+      });
 
-      if (SEND_MODE === "netlify") {
-        await sendViaNetlifyForms({ educatorId, educLabel, durationMs, summary });
-        hint.textContent = "Envoyé via Netlify ✅";
-      } else {
-        await sendViaResendFunction({ educatorId, educLabel, durationMs, summary });
-        hint.textContent = "Envoyé ✅";
-      }
+      const txt = await res.text();
+      if (!res.ok) throw new Error(txt || "Erreur d’envoi");
+      hint.textContent = "Envoyé ✅";
     } catch (err) {
       hint.textContent = "Erreur d’envoi ❌";
       alert("Erreur d’envoi ❌\n" + (err?.message || err));
