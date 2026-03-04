@@ -4,36 +4,43 @@
    2) Choisir pôle (uniquement pôles visibles)
    3) Choisir pro (uniquement pros)
    4) Questionnaire (audio, dictée, pictos, progress)
-   5) Récap (chrono + pictos) + envoi netlify + téléchargement PDF (SCREEN IDENTIQUE)
+   5) Récap (chrono + pictos) + envoi netlify + téléchargement PDF (OFFLINE OK)
 */
 
 "use strict";
 
 /* =========================
+   Helpers DOM (anti-crash)
+   ========================= */
+const $id = (id) => document.getElementById(id);
+const noop = () => {};
+
+/* =========================
    DOM refs
    ========================= */
-const select = document.getElementById("educSelect");
-const badge = document.getElementById("educBadge");
+const select = $id("educSelect");
+const badge = $id("educBadge");
 
-const poleStep = document.getElementById("poleStep");
-const educStep = document.getElementById("educStep");
+const poleStep = $id("poleStep");
+const educStep = $id("educStep");
 
-const groupSelect = document.getElementById("groupSelect"); // compat (caché)
-const groupGrid = document.getElementById("groupGrid");
-const educGrid = document.getElementById("educGrid");
+const groupSelect = $id("groupSelect"); // compat (caché)
+const groupGrid = $id("groupGrid");
+const educGrid = $id("educGrid");
 
-const btnPoleContinue = document.getElementById("startBtn");
-const btnBack = document.getElementById("backToPolesBtn");
-const btnEducContinue = document.getElementById("continueAfterEducBtn");
+const btnPoleContinue = $id("startBtn");
+const btnBack = $id("backToPolesBtn");
+const btnEducContinue = $id("continueAfterEducBtn");
 
-const out = document.getElementById("out");
-const educOut = document.getElementById("educOut");
+const out = $id("out");
+const educOut = $id("educOut");
 
 /* =========================
    Config / State
    ========================= */
 const PICTOS_BASE_PATH = "./src/assets/pictos/";
 const EDUC_FALC_PICTO_FILE = "FALC.jpg";
+const DEFAULT_EDUC_PHOTO = "./src/assets/avatar.png";
 
 let falcHeaderImg = null;
 let modeOverlay = null;
@@ -62,8 +69,6 @@ let interimBaseValue = "";
 /* =========================
    Données (éducateurs / pôles)
    ========================= */
-const DEFAULT_EDUC_PHOTO = "./src/assets/avatar.png";
-
 const EDUCATORS = [
   { name: "Alexis Plessis", role: "Éducateur spécialisé", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "alexis-plessis" },
   { name: "Morgane Deshaies", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "morgane-deshaies" },
@@ -97,7 +102,7 @@ const EDUCATORS = [
   { name: "Valentin Bésiau", role: "Moniteur éducateur", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "valentin-besiau" },
 ];
 
-const GROUPS = Array.from(new Set(EDUCATORS.map(e => e.group)));
+const GROUPS = Array.from(new Set(EDUCATORS.map((e) => e.group)));
 
 const QUESTIONNAIRES = [
   { key: "famille", label: "Questionnaire Famille", hint: "Parents / responsables", icon: "👨‍👩‍👧‍👦", path: "./src/data/questionnaire_famille.json" },
@@ -153,11 +158,11 @@ function isIdentityQuestion(q) {
   const id = String(q?.id || "").toLowerCase();
   const title = String(q?.title || "").toLowerCase();
 
-  const has = (txt, ...words) => words.some(w => txt.includes(w));
+  const has = (txt, ...words) => words.some((w) => txt.includes(w));
 
   const isFirst = has(id, "prenom", "prénom") || (has(title, "prénom", "prenom") && !has(title, "nom de famille"));
-  const isLast  = has(id, "nom") || (has(title, "nom") && !has(title, "prénom", "prenom"));
-  const isAge   = has(id, "age", "âge") || has(title, "âge", "age");
+  const isLast = has(id, "nom") || (has(title, "nom") && !has(title, "prénom", "prenom"));
+  const isAge = has(id, "age", "âge") || has(title, "âge", "age");
 
   const forbidden = has(title, "référent", "referent", "educateur", "éducateur", "professionnel", "pôle", "pole");
   if (forbidden) return false;
@@ -227,7 +232,8 @@ function findHeaderContainerFrom(el) {
 }
 
 function ensureFalcInHeader() {
-  if (falcHeaderImg) return;
+  if (falcHeaderImg || !badge) return;
+
   const headerEl = findHeaderContainerFrom(badge);
   if (!headerEl) return;
 
@@ -257,6 +263,7 @@ function ensureFalcInHeader() {
 }
 
 function updateBadge() {
+  if (!select || !badge) return;
   const label = select.options[select.selectedIndex]?.textContent;
   badge.textContent = label && label !== "— Sélectionner —" ? label : "à choisir";
 
@@ -264,30 +271,27 @@ function updateBadge() {
   if (falcHeaderImg) falcHeaderImg.style.display = select.value ? "block" : "none";
 }
 
-select.addEventListener("change", updateBadge);
-updateBadge();
-
 /* =========================
    Navigation steps
    ========================= */
 function showPoleStep() {
-  poleStep.style.display = "";
-  educStep.style.display = "none";
-  educOut.textContent = "";
+  if (poleStep) poleStep.style.display = "";
+  if (educStep) educStep.style.display = "none";
+  if (educOut) educOut.textContent = "";
 }
 function showEducStep() {
-  poleStep.style.display = "none";
-  educStep.style.display = "";
-  out.textContent = "";
+  if (poleStep) poleStep.style.display = "none";
+  if (educStep) educStep.style.display = "";
+  if (out) out.textContent = "";
 }
 
 /* =========================
    Overlay questionnaires
    ========================= */
 function setBeforePickState(disabled) {
-  select.disabled = disabled;
-  btnEducContinue.disabled = true;
-  btnPoleContinue.disabled = false;
+  if (select) select.disabled = disabled;
+  if (btnEducContinue) btnEducContinue.disabled = true;
+  if (btnPoleContinue) btnPoleContinue.disabled = false;
 }
 
 function ensureModeOverlay() {
@@ -305,7 +309,7 @@ function ensureModeOverlay() {
   document.body.appendChild(modeOverlay);
 
   const grid = modeOverlay.querySelector("#qSelectGrid");
-  grid.innerHTML = QUESTIONNAIRES.map(q => `
+  grid.innerHTML = QUESTIONNAIRES.map((q) => `
     <button type="button" class="qSelectCard" data-qkey="${escapeHtml(q.key)}" aria-label="${escapeHtml(q.label)}">
       <div class="qSelectBadge" aria-hidden="true">${escapeHtml(q.icon || "📝")}</div>
       <div>
@@ -315,8 +319,8 @@ function ensureModeOverlay() {
     </button>
   `).join("");
 
-  grid.querySelectorAll(".qSelectCard").forEach(btn => {
-    const item = QUESTIONNAIRES.find(x => x.key === btn.dataset.qkey);
+  grid.querySelectorAll(".qSelectCard").forEach((btn) => {
+    const item = QUESTIONNAIRES.find((x) => x.key === btn.dataset.qkey);
     if (!item) return;
 
     btn.addEventListener("mouseenter", () => speakHover(item.label));
@@ -352,17 +356,21 @@ function resetForNewQuestionnaire(item) {
   chronoEndMs = 0;
 
   // reset educator
-  select.innerHTML = `<option value="">— Sélectionner —</option>`;
-  select.value = "";
+  if (select) {
+    select.innerHTML = `<option value="">— Sélectionner —</option>`;
+    select.value = "";
+  }
   updateBadge();
-  educGrid.innerHTML = "";
+  if (educGrid) educGrid.innerHTML = "";
 
   renderGroupCards(true);
   showPoleStep();
 
-  out.textContent = fixedPoleFromOverlay
-    ? "Choisis le pôle (seul le bon est disponible)."
-    : "Choisis d’abord le pôle.";
+  if (out) {
+    out.textContent = fixedPoleFromOverlay
+      ? "Choisis le pôle (seul le bon est disponible)."
+      : "Choisis d’abord le pôle.";
+  }
 
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 }
@@ -381,8 +389,8 @@ function initModeChoice() {
    ========================= */
 function populateGroupsSelectCompat() {
   if (!groupSelect) return;
-  groupSelect.querySelectorAll("option:not(:first-child)").forEach(o => o.remove());
-  GROUPS.forEach(g => {
+  groupSelect.querySelectorAll("option:not(:first-child)").forEach((o) => o.remove());
+  GROUPS.forEach((g) => {
     const opt = document.createElement("option");
     opt.value = g;
     opt.textContent = g;
@@ -391,7 +399,8 @@ function populateGroupsSelectCompat() {
 }
 
 function ensureSelectOption(id, label) {
-  if ([...select.options].some(o => o.value === id)) return;
+  if (!select) return;
+  if ([...select.options].some((o) => o.value === id)) return;
   const opt = document.createElement("option");
   opt.value = id;
   opt.textContent = label;
@@ -399,15 +408,17 @@ function ensureSelectOption(id, label) {
 }
 
 function renderEducatorsForGroup(group) {
+  if (!educGrid) return;
+
   educGrid.innerHTML = "";
-  const list = EDUCATORS.filter(e => e.group === group);
+  const list = EDUCATORS.filter((e) => e.group === group);
 
   if (!list.length) {
-    educOut.textContent = "Aucun professionnel trouvé pour ce pôle.";
+    if (educOut) educOut.textContent = "Aucun professionnel trouvé pour ce pôle.";
     return;
   }
 
-  list.forEach(e => {
+  list.forEach((e) => {
     const card = document.createElement("button");
     card.type = "button";
     card.className = "educ-card";
@@ -427,14 +438,14 @@ function renderEducatorsForGroup(group) {
       const id = e.id || normalizeId(e.name);
       ensureSelectOption(id, e.name);
 
-      select.value = id;
+      if (select) select.value = id;
       updateBadge();
 
-      educGrid.querySelectorAll(".educ-card").forEach(el => el.classList.remove("is-selected"));
+      educGrid.querySelectorAll(".educ-card").forEach((el) => el.classList.remove("is-selected"));
       card.classList.add("is-selected");
 
-      btnEducContinue.disabled = false;
-      educOut.textContent = "";
+      if (btnEducContinue) btnEducContinue.disabled = false;
+      if (educOut) educOut.textContent = "";
     });
 
     educGrid.appendChild(card);
@@ -442,15 +453,18 @@ function renderEducatorsForGroup(group) {
 }
 
 function highlightSelectedPoleCard(name) {
-  groupGrid.querySelectorAll(".group-card").forEach(el => {
+  if (!groupGrid) return;
+  groupGrid.querySelectorAll(".group-card").forEach((el) => {
     el.classList.toggle("is-selected", el.dataset.group === name);
   });
 }
 
 function renderGroupCards(enabled) {
+  if (!groupGrid) return;
+
   groupGrid.innerHTML = "";
 
-  GROUPS.forEach(g => {
+  GROUPS.forEach((g) => {
     const locked = !!fixedPoleFromOverlay;
     const isAllowed = !locked || fixedPoleFromOverlay === g;
 
@@ -460,8 +474,8 @@ function renderGroupCards(enabled) {
     card.dataset.group = g;
 
     card.disabled = !enabled || !isAllowed;
-    card.style.opacity = (enabled && isAllowed) ? "" : "0.45";
-    card.style.cursor = (enabled && isAllowed) ? "" : "not-allowed";
+    card.style.opacity = enabled && isAllowed ? "" : "0.45";
+    card.style.cursor = enabled && isAllowed ? "" : "not-allowed";
 
     const gl = g.toLowerCase();
     const icon = gl.includes("accueil") ? "🏠"
@@ -476,8 +490,8 @@ function renderGroupCards(enabled) {
       <div class="group-name">${escapeHtml(g)}</div>
     `;
 
-    card.addEventListener("mouseenter", () => (enabled && isAllowed) && speakHover(g));
-    card.addEventListener("focus", () => (enabled && isAllowed) && speakHover(g));
+    card.addEventListener("mouseenter", () => enabled && isAllowed && speakHover(g));
+    card.addEventListener("focus", () => enabled && isAllowed && speakHover(g));
 
     card.addEventListener("click", () => {
       if (!enabled || !isAllowed) return;
@@ -487,13 +501,13 @@ function renderGroupCards(enabled) {
 
       highlightSelectedPoleCard(g);
 
-      select.value = "";
+      if (select) select.value = "";
       updateBadge();
-      btnEducContinue.disabled = true;
+      if (btnEducContinue) btnEducContinue.disabled = true;
 
       showEducStep();
       renderEducatorsForGroup(g);
-      educOut.textContent = "Choisis le professionnel, puis Continuer.";
+      if (educOut) educOut.textContent = "Choisis le professionnel, puis Continuer.";
     });
 
     groupGrid.appendChild(card);
@@ -554,7 +568,7 @@ function updateQuestionPictoTop(q) {
 
   quizBox.pictoWrap.style.display = "flex";
   quizBox.pictoWrap.innerHTML = "";
-  files.forEach(file => {
+  files.forEach((file) => {
     const img = document.createElement("img");
     img.className = "qPicto";
     img.src = getPictoSrc(file);
@@ -695,7 +709,7 @@ function buildSpeechTextForQuestion(q) {
   if (type === "text") return `${q.title}. Réponse libre.`;
   if (type === "scale") return `${q.title}. Déplace le curseur.`;
 
-  const choices = (q.choices || []).map(c => c.label).join(". ");
+  const choices = (q.choices || []).map((c) => c.label).join(". ");
   return choices ? `${q.title}. Choix possibles : ${choices}.` : `${q.title}.`;
 }
 
@@ -720,7 +734,7 @@ function renderScaleQuestion(q) {
 
   const facesRow = document.createElement("div");
   facesRow.className = "scaleFaces";
-  facesRow.innerHTML = faces.map(f => `<div class="scaleFace" aria-hidden="true">${f}</div>`).join("");
+  facesRow.innerHTML = faces.map((f) => `<div class="scaleFace" aria-hidden="true">${f}</div>`).join("");
 
   const range = document.createElement("input");
   range.type = "range";
@@ -745,6 +759,8 @@ function ensureQuizBox() {
   if (quizBox) return;
 
   const card = document.querySelector(".card");
+  if (!card) return;
+
   card.innerHTML = `
     <div class="progressWrap" aria-label="Progression du questionnaire">
       <div class="progressTop">
@@ -779,36 +795,36 @@ function ensureQuizBox() {
 
   quizBox = {
     card,
-    title: document.getElementById("qTitle"),
-    choices: document.getElementById("choices"),
-    prev: document.getElementById("prevBtn"),
-    next: document.getElementById("nextBtn"),
-    hint: document.getElementById("hint"),
-    speak: document.getElementById("speakBtn"),
-    mic: document.getElementById("micBtn"),
-    pictoWrap: document.getElementById("qPictoWrap"),
+    title: $id("qTitle"),
+    choices: $id("choices"),
+    prev: $id("prevBtn"),
+    next: $id("nextBtn"),
+    hint: $id("hint"),
+    speak: $id("speakBtn"),
+    mic: $id("micBtn"),
+    pictoWrap: $id("qPictoWrap"),
 
-    progressText: document.getElementById("progressText"),
-    progressPct: document.getElementById("progressPct"),
-    progressFill: document.getElementById("progressFill"),
+    progressText: $id("progressText"),
+    progressPct: $id("progressPct"),
+    progressFill: $id("progressFill"),
     progressTrack: document.querySelector(".progressTrack"),
   };
 
-  quizBox.speak.addEventListener("click", () => {
+  quizBox.speak?.addEventListener("click", () => {
     const q = getCurrentQuestion();
     if (!q) return;
     speakFR(buildSpeechTextForQuestion(q));
   });
 
-  quizBox.mic.addEventListener("click", () => toggleDictation());
+  quizBox.mic?.addEventListener("click", () => toggleDictation());
 
-  quizBox.prev.addEventListener("click", () => {
+  quizBox.prev?.addEventListener("click", () => {
     commitCurrentTextAnswerIfAny();
     qIndex = Math.max(0, qIndex - 1);
     renderQuestion();
   });
 
-  quizBox.next.addEventListener("click", () => {
+  quizBox.next?.addEventListener("click", () => {
     commitCurrentTextAnswerIfAny();
 
     const q = getCurrentQuestion();
@@ -817,19 +833,19 @@ function ensureQuizBox() {
     const val = answers[q.id];
 
     if (isIdentityQuestion(q) && !isAnswered(val)) {
-      quizBox.hint.textContent = "Nom / prénom / âge : obligatoire pour continuer.";
+      if (quizBox?.hint) quizBox.hint.textContent = "Nom / prénom / âge : obligatoire pour continuer.";
       focusFirstAnswerField();
       return;
     }
 
     const required = q.required !== false;
     if (required && !isAnswered(val)) {
-      quizBox.hint.textContent = "Réponds pour continuer.";
+      if (quizBox?.hint) quizBox.hint.textContent = "Réponds pour continuer.";
       focusFirstAnswerField();
       return;
     }
 
-    quizBox.hint.textContent = "";
+    if (quizBox?.hint) quizBox.hint.textContent = "";
 
     const qs = safeQuestionsArray(questionnaire);
     const last = qIndex === qs.length - 1;
@@ -843,6 +859,8 @@ function ensureQuizBox() {
 }
 
 function renderQuestion() {
+  if (!quizBox) return;
+
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 
   if (recog && listening) {
@@ -904,7 +922,7 @@ function renderQuestion() {
             if (!arr.includes(c.value)) arr.push(c.value);
             speakFR(c.label);
           } else {
-            arr = arr.filter(v => v !== c.value);
+            arr = arr.filter((v) => v !== c.value);
           }
           answers[q.id] = arr;
         } else {
@@ -975,12 +993,12 @@ function getAnswerLabel(q, val) {
   if (isMultiple) {
     const selectedVals = Array.isArray(val) ? val : [];
     return selectedVals
-      .map(v => (q.choices || []).find(c => c.value === v)?.label)
+      .map((v) => (q.choices || []).find((c) => c.value === v)?.label)
       .filter(Boolean)
       .join("; ");
   }
 
-  return (q.choices || []).find(c => c.value === val)?.label || "";
+  return (q.choices || []).find((c) => c.value === val)?.label || "";
 }
 
 function getAnswerPictos(q, val) {
@@ -988,114 +1006,225 @@ function getAnswerPictos(q, val) {
   const isMultiple = q.type === "multiple";
   if (type === "text" || type === "scale") return [];
 
-  const pick = (choiceVal) => (q.choices || []).find(c => c.value === choiceVal);
+  const pick = (choiceVal) => (q.choices || []).find((c) => c.value === choiceVal);
   if (isMultiple) {
     const arr = Array.isArray(val) ? val : [];
-    return arr.map(v => getChoicePictoFile(pick(v))).filter(Boolean);
+    return arr.map((v) => getChoicePictoFile(pick(v))).filter(Boolean);
   }
   return [getChoicePictoFile(pick(val))].filter(Boolean);
 }
 
 /* =========================
-   PDF — VRAI SCREEN IDENTIQUE
-   -> PDF à la taille exacte de la capture (pas A4)
+   PDF (CLIENT-SIDE) — OFFLINE OK
    ========================= */
-function getJsPDFCtor() {
-  return (window.jspdf && window.jspdf.jsPDF) || window.jsPDF || null;
-}
-
-async function waitForImages(container) {
-  const imgs = Array.from(container.querySelectorAll("img"));
-  await Promise.all(imgs.map(img => {
-    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-    if (img.decode) return img.decode().catch(() => {});
-    return new Promise(resolve => {
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
-    });
-  }));
-}
-
-async function downloadPdfFromArea(areaEl, fileName) {
-  if (!areaEl) {
-    alert("PDF indisponible : zone à exporter introuvable.");
-    return;
+function assertPdfLib() {
+  const lib = window.PDFLib;
+  if (!lib || !lib.PDFDocument) {
+    throw new Error("pdf-lib introuvable. Ajoute ./src/libs/pdf-lib.min.js (local) et charge-le dans le HTML.");
   }
+  return lib;
+}
 
-  const html2canvas = window.html2canvas;
-  const JsPDF = getJsPDFCtor();
+function clean(v) {
+  return String(v ?? "").replace(/\s+/g, " ").trim();
+}
 
-  // PLAN A : SCREEN IDENTIQUE (recommandé)
-  if (typeof html2canvas !== "undefined" && JsPDF) {
-    try {
-      // Attendre polices + images
-      try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
-      await waitForImages(areaEl);
+async function fetchBytes(url) {
+  // Pour que ça marche offline, tes assets doivent être locaux + idéalement déjà dans le cache PWA.
+  const res = await fetch(url, { cache: "force-cache" });
+  if (!res.ok) throw new Error(`Image introuvable: ${url}`);
+  const ab = await res.arrayBuffer();
+  return new Uint8Array(ab);
+}
 
-      // dimensions EXACTES de la zone (évite reflow)
-      const rect = areaEl.getBoundingClientRect();
+function extOf(url) {
+  const u = String(url || "").toLowerCase().split("?")[0];
+  if (u.endsWith(".png")) return "png";
+  if (u.endsWith(".jpg") || u.endsWith(".jpeg")) return "jpg";
+  return "";
+}
 
-      // scale haute qualité (sans exploser la mémoire)
-      const dpr = window.devicePixelRatio || 1;
-      const scale = Math.min(4, Math.max(2, dpr * 2));
+async function embedImageSafe(pdfDoc, url) {
+  if (!url) return null;
+  try {
+    const bytes = await fetchBytes(url);
+    const ext = extOf(url);
+    if (ext === "png") return await pdfDoc.embedPng(bytes);
+    if (ext === "jpg") return await pdfDoc.embedJpg(bytes);
 
-      const canvas = await html2canvas(areaEl, {
-        scale,
-        useCORS: true,
-        backgroundColor: null, // ✅ garde le vrai fond / couleurs du récap
-        logging: false,
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        windowWidth: Math.ceil(rect.width),
-        windowHeight: Math.ceil(rect.height),
-      });
+    // fallback: try png then jpg
+    try { return await pdfDoc.embedPng(bytes); } catch (e) {}
+    try { return await pdfDoc.embedJpg(bytes); } catch (e) {}
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
 
-      const imgData = canvas.toDataURL("image/png");
+function downloadBytesAsPdf(pdfBytes, filename) {
+  const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
 
-      // ✅ PDF À LA TAILLE EXACTE DU SCREEN (aucune déformation A4)
-      const pdf = new JsPDF({
-        orientation: canvas.width >= canvas.height ? "l" : "p",
-        unit: "px",
-        format: [canvas.width, canvas.height],
-      });
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || "recap.pdf";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height, undefined, "FAST");
-      pdf.save(fileName || "recap.pdf");
-      return;
-    } catch (e) {
-      console.warn("PDF Plan A (screen identique) a échoué, fallback html2pdf.", e);
+  URL.revokeObjectURL(url);
+}
+
+function wrapText(font, text, size, maxWidth) {
+  const words = clean(text).split(" ").filter(Boolean);
+  if (!words.length) return [""];
+  const lines = [];
+  let cur = "";
+
+  for (const w of words) {
+    const test = cur ? `${cur} ${w}` : w;
+    const width = font.widthOfTextAtSize(test, size);
+    if (width <= maxWidth) cur = test;
+    else {
+      if (cur) lines.push(cur);
+      cur = w;
     }
   }
-
-  // PLAN B : html2pdf (fallback seulement)
-  if (typeof window.html2pdf === "undefined") {
-    alert("PDF indisponible : librairie PDF non chargée.");
-    return;
-  }
-
-  const opt = {
-    margin: 8,
-    filename: fileName || "recap.pdf",
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 3, useCORS: true, backgroundColor: "#ffffff" },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ["css", "legacy"] },
-  };
-
-  window.html2pdf().set(opt).from(areaEl).save();
+  if (cur) lines.push(cur);
+  return lines;
 }
 
+async function buildPdfClient(payload) {
+  const { PDFDocument, StandardFonts, rgb } = assertPdfLib();
+
+  const pdfDoc = await PDFDocument.create();
+  let page = pdfDoc.addPage([595.28, 841.89]); // A4
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const margin = 40;
+  const pageW = page.getWidth();
+  const pageH = page.getHeight();
+  const contentW = pageW - margin * 2;
+
+  let x = margin;
+  let y = pageH - margin;
+
+  const newPageIfNeeded = (needed = 40) => {
+    if (y - needed < margin) {
+      page = pdfDoc.addPage([595.28, 841.89]);
+      y = pageH - margin;
+    }
+  };
+
+  const drawText = (text, { size = 11, bold = false, color = rgb(0, 0, 0) } = {}) => {
+    const f = bold ? fontBold : font;
+    page.drawText(text, { x, y, size, font: f, color });
+    y -= size + 5;
+  };
+
+  const drawHr = () => {
+    y -= 6;
+    page.drawLine({
+      start: { x: margin, y },
+      end: { x: pageW - margin, y },
+      thickness: 1,
+      color: rgb(0.85, 0.85, 0.85),
+    });
+    y -= 10;
+  };
+
+  // Header
+  drawText("Recueil des attentes — Récapitulatif", { size: 16, bold: true, color: rgb(0.12, 0.25, 0.55) });
+  drawText(`Éducateur : ${clean(payload.educatorLabel)}`, { size: 11 });
+  drawText(`Date : ${clean(payload.createdAtFR)}`, { size: 11 });
+  if (Number.isFinite(payload.durationSeconds)) {
+    const ms = Number(payload.durationSeconds) * 1000;
+    drawText(`Durée : ${formatDuration(ms)}`, { size: 11 });
+  }
+  drawHr();
+
+  // Items
+  const items = Array.isArray(payload.summary) ? payload.summary : [];
+  const picSize = 18;
+  const picGap = 6;
+  const rightPicMax = 8 * (picSize + 2);
+
+  for (const it of items) {
+    newPageIfNeeded(90);
+
+    // Question title
+    const qText = clean(it.question || "");
+    const aText = clean(it.answer || "");
+
+    // zone pictos à droite
+    const pics = [
+      ...(Array.isArray(it.qPictos) ? it.qPictos : []),
+      ...(Array.isArray(it.aPictos) ? it.aPictos : []),
+    ].filter(Boolean);
+
+    const picsW = Math.min(rightPicMax, pics.length * (picSize + 2));
+    const textW = contentW - (picsW ? (picsW + 10) : 0);
+
+    // Question (wrap)
+    const qLines = wrapText(fontBold, qText || "Question", 12, textW);
+    for (const line of qLines) {
+      page.drawText(line, { x: margin, y, size: 12, font: fontBold, color: rgb(0.08, 0.08, 0.08) });
+      y -= 12 + 4;
+    }
+
+    // Answer
+    const aLines = wrapText(font, aText || "—", 11, textW);
+    for (const line of aLines) {
+      page.drawText(line, { x: margin, y, size: 11, font, color: rgb(0.2, 0.2, 0.2) });
+      y -= 11 + 4;
+    }
+
+    // Pictos (à droite)
+    if (pics.length) {
+      let px = pageW - margin - picsW;
+      let py = y + (qLines.length + aLines.length) * (11 + 4) + picGap; // remonte à côté du bloc
+      py = Math.min(py, pageH - margin - picSize);
+
+      let count = 0;
+      for (const f of pics) {
+        const url = getPictoSrc(f);
+        const img = await embedImageSafe(pdfDoc, url);
+        if (img) {
+          page.drawImage(img, { x: px, y: py, width: picSize, height: picSize });
+          px += picSize + 2;
+          count++;
+          if (count >= 8) break;
+        }
+      }
+    }
+
+    y -= picGap;
+    drawHr();
+  }
+
+  return await pdfDoc.save();
+}
+
+async function downloadPdfClient(payload, filename) {
+  const pdfBytes = await buildPdfClient(payload);
+  downloadBytesAsPdf(pdfBytes, filename);
+}
+
+/* =========================
+   Summary UI
+   ========================= */
 function renderSummary() {
   commitCurrentTextAnswerIfAny();
   chronoEndMs = Date.now();
-  const durationMs = chronoStartMs ? (chronoEndMs - chronoStartMs) : 0;
+  const durationMs = chronoStartMs ? chronoEndMs - chronoStartMs : 0;
 
-  const educatorId = select.value;
-  const educLabel = badge.textContent;
+  const educatorId = select?.value || "";
+  const educLabel = badge?.textContent || "";
 
   const qs = safeQuestionsArray(questionnaire);
 
-  const summary = qs.map(q => {
+  const summary = qs.map((q) => {
     const val = answers[q.id] ?? "";
     return {
       id: q.id,
@@ -1103,8 +1232,11 @@ function renderSummary() {
       answer: getAnswerLabel(q, val),
       qPictos: getQuestionPictoFiles(q),
       aPictos: getAnswerPictos(q, val),
+      type: q.type || "single",
     };
   });
+
+  if (!quizBox?.card) return;
 
   quizBox.card.innerHTML = `
     <div id="pdfArea">
@@ -1128,53 +1260,69 @@ function renderSummary() {
     <p class="out" id="sendHint"></p>
   `;
 
-  const list = document.getElementById("summaryList");
-  summary.forEach(item => {
-    const qPics = (item.qPictos || []).map(f => `
-      <img src="${getPictoSrc(f)}" alt="" loading="lazy" onerror="this.style.display='none'"/>
-    `).join("");
-    const aPics = (item.aPictos || []).map(f => `
-      <img src="${getPictoSrc(f)}" alt="" loading="lazy" onerror="this.style.display='none'"/>
-    `).join("");
+  const list = $id("summaryList");
+  if (list) {
+    summary.forEach((item) => {
+      const qPics = (item.qPictos || [])
+        .map((f) => `<img src="${getPictoSrc(f)}" alt="" loading="lazy" onerror="this.style.display='none'"/>`)
+        .join("");
+      const aPics = (item.aPictos || [])
+        .map((f) => `<img src="${getPictoSrc(f)}" alt="" loading="lazy" onerror="this.style.display='none'"/>`)
+        .join("");
 
-    const div = document.createElement("div");
-    div.className = "summaryCard";
-    div.innerHTML = `
-      <div class="summaryTop">
-        <div style="flex:1;">
-          <div class="summaryQTitle">${escapeHtml(item.question)}</div>
-          <div class="summaryAnswer">${escapeHtml(item.answer || "")}</div>
+      const div = document.createElement("div");
+      div.className = "summaryCard";
+      div.innerHTML = `
+        <div class="summaryTop">
+          <div style="flex:1;">
+            <div class="summaryQTitle">${escapeHtml(item.question)}</div>
+            <div class="summaryAnswer">${escapeHtml(item.answer || "")}</div>
+          </div>
+          <div class="summaryPictos" aria-hidden="true">
+            ${qPics}${aPics}
+          </div>
         </div>
-        <div class="summaryPictos" aria-hidden="true">
-          ${qPics}${aPics}
-        </div>
-      </div>
-    `;
-    list.appendChild(div);
-  });
+      `;
+      list.appendChild(div);
+    });
+  }
 
-  document.getElementById("editBtn").addEventListener("click", () => {
+  $id("editBtn")?.addEventListener("click", () => {
     quizBox = null;
     ensureQuizBox();
     renderQuestion();
   });
 
-  document.getElementById("pdfBtn").addEventListener("click", async () => {
-    const pdfArea = document.getElementById("pdfArea");
+  // ✅ PDF: génération locale (sans Netlify / sans réseau)
+  $id("pdfBtn")?.addEventListener("click", async () => {
     const safeEduc = normalizeId(educLabel || "educateur") || "educateur";
     const stamp = new Date().toISOString().slice(0, 10);
     const filename = `recap_${safeEduc}_${stamp}.pdf`;
 
+    const payload = {
+      educatorId,
+      educatorLabel: educLabel,
+      createdAtFR: new Date().toLocaleString("fr-FR"),
+      durationSeconds: Math.round(durationMs / 1000),
+      summary, // inclut qPictos / aPictos
+    };
+
+    const hint = $id("sendHint");
+    if (hint) hint.textContent = "Génération du PDF…";
+
     try {
-      await downloadPdfFromArea(pdfArea, filename);
+      await downloadPdfClient(payload, filename);
+      if (hint) hint.textContent = "PDF téléchargé ✅";
     } catch (e) {
+      if (hint) hint.textContent = "Erreur PDF ❌";
       alert("Erreur génération PDF ❌\n" + (e?.message || e));
     }
   });
 
-  document.getElementById("sendBtn").addEventListener("click", async () => {
-    const hint = document.getElementById("sendHint");
-    hint.textContent = "Envoi en cours…";
+  // ✅ Envoi: reste Netlify (online)
+  $id("sendBtn")?.addEventListener("click", async () => {
+    const hint = $id("sendHint");
+    if (hint) hint.textContent = "Envoi en cours…";
 
     try {
       const res = await fetch("/.netlify/functions/submit", {
@@ -1183,16 +1331,16 @@ function renderSummary() {
         body: JSON.stringify({
           educatorId,
           educatorLabel: educLabel,
-          summary: summary.map(x => ({ question: x.question, answer: x.answer })),
+          summary: summary.map((x) => ({ question: x.question, answer: x.answer })),
           durationSeconds: Math.round(durationMs / 1000),
         }),
       });
 
       const txt = await res.text();
       if (!res.ok) throw new Error(txt || "Erreur d’envoi");
-      hint.textContent = "Envoyé ✅";
+      if (hint) hint.textContent = "Envoyé ✅";
     } catch (err) {
-      hint.textContent = "Erreur d’envoi ❌";
+      if (hint) hint.textContent = "Erreur d’envoi ❌";
       alert("Erreur d’envoi ❌\n" + (err?.message || err));
     }
   });
@@ -1201,31 +1349,31 @@ function renderSummary() {
 /* =========================
    Events steps
    ========================= */
-btnBack.addEventListener("click", () => {
-  select.value = "";
+(btnBack || { addEventListener: noop }).addEventListener("click", () => {
+  if (select) select.value = "";
   updateBadge();
-  btnEducContinue.disabled = true;
+  if (btnEducContinue) btnEducContinue.disabled = true;
   showPoleStep();
-  out.textContent = "Clique sur un pôle pour continuer.";
+  if (out) out.textContent = "Clique sur un pôle pour continuer.";
 });
 
-btnEducContinue.addEventListener("click", async () => {
+(btnEducContinue || { addEventListener: noop }).addEventListener("click", async () => {
   if (!selectedQuestionnaireKey) {
-    educOut.textContent = "Choisis d’abord un questionnaire.";
+    if (educOut) educOut.textContent = "Choisis d’abord un questionnaire.";
     openOverlay();
     return;
   }
   if (!selectedPole) {
-    educOut.textContent = "Choisis d’abord un pôle.";
+    if (educOut) educOut.textContent = "Choisis d’abord un pôle.";
     showPoleStep();
     return;
   }
-  if (!select.value) {
-    educOut.textContent = "Merci de choisir le professionnel avant de continuer.";
+  if (!select?.value) {
+    if (educOut) educOut.textContent = "Merci de choisir le professionnel avant de continuer.";
     return;
   }
 
-  educOut.textContent = "";
+  if (educOut) educOut.textContent = "";
   await loadQuestionnaire();
   if (!safeQuestionsArray(questionnaire).length) return;
 
@@ -1238,23 +1386,26 @@ btnEducContinue.addEventListener("click", async () => {
   renderQuestion();
 });
 
-btnPoleContinue.addEventListener("click", () => {
+(btnPoleContinue || { addEventListener: noop }).addEventListener("click", () => {
   if (!selectedQuestionnaireKey) {
-    out.textContent = "Choisis d’abord un questionnaire.";
+    if (out) out.textContent = "Choisis d’abord un questionnaire.";
     openOverlay();
     return;
   }
-  out.textContent = "Clique sur un pôle pour continuer.";
+  if (out) out.textContent = "Clique sur un pôle pour continuer.";
 });
 
 /* =========================
    Init
    ========================= */
 function init() {
+  if (select) select.addEventListener("change", updateBadge);
+  updateBadge();
+
   populateGroupsSelectCompat();
   renderGroupCards(false);
   showPoleStep();
-  out.textContent = "Choisis d’abord un questionnaire.";
+  if (out) out.textContent = "Choisis d’abord un questionnaire.";
   initModeChoice();
 }
 
