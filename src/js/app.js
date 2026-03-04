@@ -4,7 +4,7 @@
    2) Choisir pôle (uniquement pôles visibles)
    3) Choisir pro (uniquement pros)
    4) Questionnaire (audio, dictée, pictos, progress)
-   5) Récap (chrono + pictos) + envoi netlify + téléchargement PDF (OFFLINE OK)
+   5) Récap (chrono + pictos) + envoi netlify + téléchargement PDF (OFFLINE OK, rendu identique)
 */
 
 "use strict";
@@ -1015,7 +1015,7 @@ function getAnswerPictos(q, val) {
 }
 
 /* =========================
-   PDF (CLIENT-SIDE) — OFFLINE OK
+   PDF (CAPTURE HTML) — rendu identique + multi-pages + offline OK
    ========================= */
 function assertPdfLib() {
   const lib = window.PDFLib;
@@ -1025,40 +1025,12 @@ function assertPdfLib() {
   return lib;
 }
 
-function clean(v) {
-  return String(v ?? "").replace(/\s+/g, " ").trim();
-}
-
-async function fetchBytes(url) {
-  // Pour que ça marche offline, tes assets doivent être locaux + idéalement déjà dans le cache PWA.
-  const res = await fetch(url, { cache: "force-cache" });
-  if (!res.ok) throw new Error(`Image introuvable: ${url}`);
-  const ab = await res.arrayBuffer();
-  return new Uint8Array(ab);
-}
-
-function extOf(url) {
-  const u = String(url || "").toLowerCase().split("?")[0];
-  if (u.endsWith(".png")) return "png";
-  if (u.endsWith(".jpg") || u.endsWith(".jpeg")) return "jpg";
-  return "";
-}
-
-async function embedImageSafe(pdfDoc, url) {
-  if (!url) return null;
-  try {
-    const bytes = await fetchBytes(url);
-    const ext = extOf(url);
-    if (ext === "png") return await pdfDoc.embedPng(bytes);
-    if (ext === "jpg") return await pdfDoc.embedJpg(bytes);
-
-    // fallback: try png then jpg
-    try { return await pdfDoc.embedPng(bytes); } catch (e) {}
-    try { return await pdfDoc.embedJpg(bytes); } catch (e) {}
-    return null;
-  } catch (e) {
-    return null;
+function assertHtml2Canvas() {
+  const h2c = window.html2canvas;
+  if (!h2c) {
+    throw new Error("html2canvas introuvable. Ajoute ./src/libs/html2canvas.min.js (local) et charge-le dans le HTML.");
   }
+  return h2c;
 }
 
 function downloadBytesAsPdf(pdfBytes, filename) {
@@ -1075,139 +1047,113 @@ function downloadBytesAsPdf(pdfBytes, filename) {
   URL.revokeObjectURL(url);
 }
 
-function wrapText(font, text, size, maxWidth) {
-  const words = clean(text).split(" ").filter(Boolean);
-  if (!words.length) return [""];
-  const lines = [];
-  let cur = "";
-
-  for (const w of words) {
-    const test = cur ? `${cur} ${w}` : w;
-    const width = font.widthOfTextAtSize(test, size);
-    if (width <= maxWidth) cur = test;
-    else {
-      if (cur) lines.push(cur);
-      cur = w;
-    }
-  }
-  if (cur) lines.push(cur);
-  return lines;
+function waitImagesLoaded(container) {
+  const imgs = Array.from(container.querySelectorAll("img"));
+  const pending = imgs
+    .filter((img) => !img.complete)
+    .map((img) => new Promise((resolve) => {
+      img.addEventListener("load", resolve, { once: true });
+      img.addEventListener("error", resolve, { once: true });
+    }));
+  return Promise.all(pending);
 }
 
-async function buildPdfClient(payload) {
-  const { PDFDocument, StandardFonts, rgb } = assertPdfLib();
+async function captureElementToCanvas(el) {
+  const html2canvas = assertHtml2Canvas();
+
+  // On attend que les pictos soient chargés pour éviter des images vides dans le PDF
+  await waitImagesLoaded(el);
+
+  // Force un fond blanc pour éviter transparence moche en PDF
+  const canvas = await html2canvas(el, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+    logging: false,
+    scrollX: 0,
+    scrollY: -window.scrollY,
+    windowWidth: document.documentElement.clientWidth,
+    windowHeight: document.documentElement.clientHeight,
+  });
+
+  return canvas;
+}
+
+function canvasToPngBytes(canvas) {
+  const dataUrl = canvas.toDataURL("image/png");
+  const base64 = dataUrl.split(",")[1];
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function sliceCanvas(canvas, sliceY, sliceH) {
+  const out = document.createElement("canvas");
+  out.width = canvas.width;
+  out.height = sliceH;
+  const ctx = out.getContext("2d");
+  ctx.drawImage(canvas, 0, sliceY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+  return out;
+}
+
+async function buildPdfFromRecapElement(el) {
+  const { PDFDocument } = assertPdfLib();
+
+  const canvas = await captureElementToCanvas(el);
+
+  // A4 en points PDF
+  const pageW = 595.28;
+  const pageH = 841.89;
+
+  // Marges (en points)
+  const margin = 28;
+  const contentW = pageW - margin * 2;
+  const contentH = pageH - margin * 2;
+
+  // On va scaler l'image pour qu'elle rentre en largeur A4 (contentW)
+  const scale = contentW / canvas.width;
+  const scaledTotalH = canvas.height * scale;
 
   const pdfDoc = await PDFDocument.create();
-  let page = pdfDoc.addPage([595.28, 841.89]); // A4
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  const margin = 40;
-  const pageW = page.getWidth();
-  const pageH = page.getHeight();
-  const contentW = pageW - margin * 2;
+  // Nombre de pages nécessaires
+  const pagesCount = Math.max(1, Math.ceil(scaledTotalH / contentH));
 
-  let x = margin;
-  let y = pageH - margin;
+  for (let p = 0; p < pagesCount; p++) {
+    const page = pdfDoc.addPage([pageW, pageH]);
 
-  const newPageIfNeeded = (needed = 40) => {
-    if (y - needed < margin) {
-      page = pdfDoc.addPage([595.28, 841.89]);
-      y = pageH - margin;
-    }
-  };
+    // Portion de canvas correspondant à cette page (en pixels)
+    const sliceTopScaled = p * contentH;
+    const sliceBottomScaled = Math.min((p + 1) * contentH, scaledTotalH);
+    const sliceHScaled = sliceBottomScaled - sliceTopScaled;
 
-  const drawText = (text, { size = 11, bold = false, color = rgb(0, 0, 0) } = {}) => {
-    const f = bold ? fontBold : font;
-    page.drawText(text, { x, y, size, font: f, color });
-    y -= size + 5;
-  };
+    const sliceYpx = Math.round(sliceTopScaled / scale);
+    const sliceHpx = Math.min(canvas.height - sliceYpx, Math.round(sliceHScaled / scale));
 
-  const drawHr = () => {
-    y -= 6;
-    page.drawLine({
-      start: { x: margin, y },
-      end: { x: pageW - margin, y },
-      thickness: 1,
-      color: rgb(0.85, 0.85, 0.85),
+    const slice = sliceCanvas(canvas, sliceYpx, sliceHpx);
+    const pngBytes = canvasToPngBytes(slice);
+    const img = await pdfDoc.embedPng(pngBytes);
+
+    const drawW = contentW;
+    const drawH = sliceHpx * scale;
+
+    page.drawImage(img, {
+      x: margin,
+      y: pageH - margin - drawH,
+      width: drawW,
+      height: drawH,
     });
-    y -= 10;
-  };
-
-  // Header
-  drawText("Recueil des attentes — Récapitulatif", { size: 16, bold: true, color: rgb(0.12, 0.25, 0.55) });
-  drawText(`Éducateur : ${clean(payload.educatorLabel)}`, { size: 11 });
-  drawText(`Date : ${clean(payload.createdAtFR)}`, { size: 11 });
-  if (Number.isFinite(payload.durationSeconds)) {
-    const ms = Number(payload.durationSeconds) * 1000;
-    drawText(`Durée : ${formatDuration(ms)}`, { size: 11 });
-  }
-  drawHr();
-
-  // Items
-  const items = Array.isArray(payload.summary) ? payload.summary : [];
-  const picSize = 18;
-  const picGap = 6;
-  const rightPicMax = 8 * (picSize + 2);
-
-  for (const it of items) {
-    newPageIfNeeded(90);
-
-    // Question title
-    const qText = clean(it.question || "");
-    const aText = clean(it.answer || "");
-
-    // zone pictos à droite
-    const pics = [
-      ...(Array.isArray(it.qPictos) ? it.qPictos : []),
-      ...(Array.isArray(it.aPictos) ? it.aPictos : []),
-    ].filter(Boolean);
-
-    const picsW = Math.min(rightPicMax, pics.length * (picSize + 2));
-    const textW = contentW - (picsW ? (picsW + 10) : 0);
-
-    // Question (wrap)
-    const qLines = wrapText(fontBold, qText || "Question", 12, textW);
-    for (const line of qLines) {
-      page.drawText(line, { x: margin, y, size: 12, font: fontBold, color: rgb(0.08, 0.08, 0.08) });
-      y -= 12 + 4;
-    }
-
-    // Answer
-    const aLines = wrapText(font, aText || "—", 11, textW);
-    for (const line of aLines) {
-      page.drawText(line, { x: margin, y, size: 11, font, color: rgb(0.2, 0.2, 0.2) });
-      y -= 11 + 4;
-    }
-
-    // Pictos (à droite)
-    if (pics.length) {
-      let px = pageW - margin - picsW;
-      let py = y + (qLines.length + aLines.length) * (11 + 4) + picGap; // remonte à côté du bloc
-      py = Math.min(py, pageH - margin - picSize);
-
-      let count = 0;
-      for (const f of pics) {
-        const url = getPictoSrc(f);
-        const img = await embedImageSafe(pdfDoc, url);
-        if (img) {
-          page.drawImage(img, { x: px, y: py, width: picSize, height: picSize });
-          px += picSize + 2;
-          count++;
-          if (count >= 8) break;
-        }
-      }
-    }
-
-    y -= picGap;
-    drawHr();
   }
 
   return await pdfDoc.save();
 }
 
-async function downloadPdfClient(payload, filename) {
-  const pdfBytes = await buildPdfClient(payload);
+async function downloadRecapAsPdf(filename = "recap.pdf") {
+  const recapEl = $id("pdfArea");
+  if (!recapEl) throw new Error("Zone récap introuvable (#pdfArea).");
+
+  const pdfBytes = await buildPdfFromRecapElement(recapEl);
   downloadBytesAsPdf(pdfBytes, filename);
 }
 
@@ -1293,25 +1239,17 @@ function renderSummary() {
     renderQuestion();
   });
 
-  // ✅ PDF: génération locale (sans Netlify / sans réseau)
+  // ✅ PDF: capture HTML -> PDF identique (multi-pages)
   $id("pdfBtn")?.addEventListener("click", async () => {
     const safeEduc = normalizeId(educLabel || "educateur") || "educateur";
     const stamp = new Date().toISOString().slice(0, 10);
     const filename = `recap_${safeEduc}_${stamp}.pdf`;
 
-    const payload = {
-      educatorId,
-      educatorLabel: educLabel,
-      createdAtFR: new Date().toLocaleString("fr-FR"),
-      durationSeconds: Math.round(durationMs / 1000),
-      summary, // inclut qPictos / aPictos
-    };
-
     const hint = $id("sendHint");
     if (hint) hint.textContent = "Génération du PDF…";
 
     try {
-      await downloadPdfClient(payload, filename);
+      await downloadRecapAsPdf(filename);
       if (hint) hint.textContent = "PDF téléchargé ✅";
     } catch (e) {
       if (hint) hint.textContent = "Erreur PDF ❌";
