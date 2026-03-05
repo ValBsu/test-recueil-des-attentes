@@ -52,19 +52,41 @@ select:focus{
   border-color: color-mix(in srgb, var(--focus) 25%, white 75%);
 }
 
-/* Badge éducateur (charte) */
+/* Badge éducateur (gélule blanche) */
 .badge{
   display:inline-flex;
   align-items:center;
   gap:8px;
-  padding:8px 12px;
+
+  padding:10px 14px;
   border-radius:999px;
-  background: color-mix(in srgb, var(--brand-green-pale) 55%, white 45%);
-  border:1px solid color-mix(in srgb, var(--brand-green) 30%, white 70%);
+
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.12);
+
   color: #0f2a14;
   font-weight:800;
   font-size:.95rem;
+
+  /* petit rendu premium sans “casser” */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.9) inset,
+    0 10px 26px rgba(16,24,40,.12);
 }
+
+/* petit reflet discret */
+.badge::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border-radius:999px;
+  pointer-events:none;
+  background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,0));
+  opacity:.55;
+}
+
+/* pour le ::before */
+.badge{ position: relative; }
 
 .out{
   color:var(--muted);
@@ -203,8 +225,6 @@ select:focus{
   position: relative;
   z-index: 1;
 }
-
-/* 2) (ancienne barre indéterminée) => on la désactive plus bas via “PROGRESS BAR ONLY” */
 
 /* 3) Animation d’apparition des contenus */
 #choices, .summaryList, #pdfArea{

@@ -20,23 +20,45 @@
   gap:12px;
 }
 
-/* Logo sur “carte blanche” (logo couleur => fond blanc) */
+/* Logo sur “gélule blanche” */
 .logo{
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
   background: #fff;
-  border: 1px solid rgba(0,0,0,.10);
-  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 999px;
 
-  padding: 10px 12px;
+  padding: 10px 16px;
+
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.9) inset,
+    0 10px 26px rgba(16,24,40,.14);
+
+  position: relative;
+  overflow: hidden;
+}
+
+/* reflet discret */
+.logo::before{
+  content:"";
+  position:absolute;
+  left:-20%;
+  top:-60%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(420px 180px at 30% 35%, rgba(255,255,255,.85), rgba(255,255,255,0) 60%);
+  opacity: .55;
+  pointer-events:none;
 }
 
 .logo img{
   height: 56px;
   width: auto;
   display: block;
+  position: relative;
+  z-index: 1;
 }
 
 .brand h1{
