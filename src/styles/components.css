@@ -9,14 +9,18 @@
   font-size:1rem;
 }
 
-.btn:hover{ filter:brightness(.97); }
+.btn:hover{
+  filter:brightness(.97);
+  box-shadow:
+    0 1px 0 rgba(16,24,40,.04),
+    0 22px 70px rgba(16,24,40,.14);
+}
 
 .btn:focus{
   outline:3px solid color-mix(in srgb, var(--focus) 35%, transparent);
   outline-offset:2px;
 }
 
-/* Bouton secondaire (utilisé dans ton HTML) */
 .btn.secondary{
   background:#fff;
   color:var(--text);
@@ -52,29 +56,24 @@ select:focus{
   border-color: color-mix(in srgb, var(--focus) 25%, white 75%);
 }
 
-/* Badge éducateur (gélule blanche) */
+/* Badge éducateur */
 .badge{
   display:inline-flex;
   align-items:center;
   gap:8px;
-
   padding:10px 14px;
   border-radius:999px;
-
   background: #fff;
   border: 1px solid rgba(0,0,0,.12);
-
   color: #0f2a14;
   font-weight:800;
   font-size:.95rem;
-
-  /* petit rendu premium sans “casser” */
   box-shadow:
     0 1px 0 rgba(255,255,255,.9) inset,
     0 10px 26px rgba(16,24,40,.12);
+  position: relative;
 }
 
-/* petit reflet discret */
 .badge::before{
   content:"";
   position:absolute;
@@ -84,9 +83,6 @@ select:focus{
   background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,0));
   opacity:.55;
 }
-
-/* pour le ::before */
-.badge{ position: relative; }
 
 .out{
   color:var(--muted);
@@ -115,10 +111,16 @@ select:focus{
   border:1px solid var(--line);
   border-radius:var(--radius-sm);
   background:#fff;
+  position: relative;
+  margin: 10px 0;
 }
 
-.choiceRow input{
+.choiceRow input[type="radio"],
+.choiceRow input[type="checkbox"]{
+  width: 18px;
+  height: 18px;
   transform: scale(1.3);
+  accent-color: var(--primary);
 }
 
 .choiceRow label{
@@ -126,26 +128,45 @@ select:focus{
   flex:1;
 }
 
+.choiceRow:has(input:checked){
+  border-color: color-mix(in srgb, var(--primary) 40%, white 60%);
+  box-shadow: 0 1px 0 rgba(16,24,40,.04),
+              0 16px 50px rgba(16,24,40,.12);
+  background: linear-gradient(180deg, rgba(118,184,42,.10), rgba(255,255,255,.92));
+}
+
+.choiceRow:has(input:checked)::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: inherit;
+  pointer-events:none;
+  background: radial-gradient(260px 120px at 88% 50%, rgba(118,184,42,.18), transparent 55%);
+  opacity: .9;
+}
+
 .summaryList{
-  display:grid;
-  gap:10px;
-  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-top:12px;
   margin-bottom:10px;
 }
 
-.summaryItem{
+.summaryItem,
+.summaryCard{
   padding:12px;
   border:1px solid var(--line);
-  border-radius:var(--radius-sm);
+  border-radius:16px;
   background:#fff;
-}
-
-.summaryItem{
+  box-shadow: 0 6px 18px rgba(0,0,0,.05);
   break-inside: avoid;
   page-break-inside: avoid;
 }
 
-#pdfArea{ padding: 6px; }
+#pdfArea{
+  padding: 6px;
+}
 
 .qHeader{
   display:flex;
@@ -169,40 +190,61 @@ select:focus{
   outline-offset:2px;
 }
 
-.textAnswer{
+.textAnswer,
+.otherAnswerInput{
   width:100%;
   border:1px solid var(--line);
   border-radius:12px;
   padding:12px;
   font-size:16px;
-  min-height:110px;
   resize:vertical;
+  background:#fff;
 }
 
-.textAnswer:focus{
+.textAnswer{
+  min-height:110px;
+}
+
+.otherAnswerInput{
+  min-height:84px;
+}
+
+.textAnswer:focus,
+.otherAnswerInput:focus{
   outline:3px solid color-mix(in srgb, var(--focus) 30%, transparent);
   border-color: color-mix(in srgb, var(--focus) 25%, white 75%);
 }
 
-.qActions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+.otherAnswerWrap{
+  display:grid;
+  gap:8px;
+  margin-top:8px;
+  padding:12px;
+  border:1px dashed rgba(0,0,0,.14);
+  border-radius:14px;
+  background: rgba(0,0,0,.02);
 }
 
-.iconBtn.is-listening {
+.otherAnswerLabel{
+  font-weight:800;
+  font-size:.95rem;
+}
+
+.qActions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.iconBtn.is-listening{
   transform: scale(1.08);
 }
 
-/* =========================
-   PREMIUM+ (Apple-ish + wow)
-   100% CSS, sans casser
-   ========================= */
-
-/* 1) Top bar décorative (façon app premium) */
+/* Premium */
 .card{
   position: relative;
   overflow: hidden;
+  padding-top: 22px;
 }
 
 .card::before{
@@ -226,84 +268,57 @@ select:focus{
   z-index: 1;
 }
 
-/* 3) Animation d’apparition des contenus */
-#choices, .summaryList, #pdfArea{
+.card::after{
+  content: none !important;
+}
+
+#choices,
+.summaryList,
+#pdfArea{
   animation: fadeUp .28s ease both;
 }
 
 @keyframes fadeUp{
-  from{ opacity: 0; transform: translateY(6px); }
-  to{ opacity: 1; transform: translateY(0); }
+  from{
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to{
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* 4) Sélection plus visible */
-.choiceRow input[type="radio"],
-.choiceRow input[type="checkbox"]{
-  width: 18px;
-  height: 18px;
-  accent-color: var(--primary);
-}
-
-/* Quand l’input est coché : glow sur la carte */
-.choiceRow:has(input:checked){
-  border-color: color-mix(in srgb, var(--primary) 40%, white 60%);
-  box-shadow: 0 1px 0 rgba(16,24,40,.04),
-              0 16px 50px rgba(16,24,40,.12);
-  background: linear-gradient(180deg, rgba(118,184,42,.10), rgba(255,255,255,.92));
-}
-
-/* Halo à droite */
-.choiceRow:has(input:checked)::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius: inherit;
-  pointer-events:none;
-  background: radial-gradient(260px 120px at 88% 50%, rgba(118,184,42,.18), transparent 55%);
-  opacity: .9;
-}
-
-/* pour ::after */
-.choiceRow{ position: relative; }
-
-/* 5) Boutons : glow au hover */
-.btn:hover{
-  box-shadow:
-    0 1px 0 rgba(16,24,40,.04),
-    0 22px 70px rgba(16,24,40,.14);
-}
-
-/* 6) Pictos */
 .qPicto{
   transform: translateZ(0);
 }
+
 .qPictoWrap{
+  margin: 10px 0 6px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
   padding-top: 2px;
 }
 
-/* 7) Reduce motion */
-@media (prefers-reduced-motion: reduce){
-  #choices, .summaryList, #pdfArea{ animation: none; }
-  .btn, .choiceRow, .iconBtn{ transition: none; }
+.qPicto{
+  height: 70px;
+  width: auto;
+  object-fit: contain;
 }
 
-/* =========================
-   PROGRESS BAR ONLY + SPACING
-   -> conserve ton design actuel
-   ========================= */
-
-/* Désactive l’ancienne barre indéterminée si tu l’avais via .card::after */
-.card::after{ content: none !important; }
-
-/* On descend un peu le contenu (évite chevauchement) */
-.card{
-  padding-top: 22px;
-}
-
-/* Barre uniquement */
 .progressWrap{
   margin: 0 0 14px;
   padding-top: 6px;
+}
+
+.progressTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
 }
 
 .progressTrack{
@@ -324,13 +339,10 @@ select:focus{
   transition: width .25s ease;
 }
 
-/* =========================
-   From app.js (ex-injectStyles) — SAFE
-   ========================= */
-
+/* Grilles */
 .group-grid,
 .educ-grid,
-.qSelectGrid {
+.qSelectGrid{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
@@ -339,7 +351,7 @@ select:focus{
 
 .group-card,
 .educ-card,
-.qSelectCard {
+.qSelectCard{
   display: flex;
   align-items: center;
   gap: 12px;
@@ -352,7 +364,6 @@ select:focus{
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
 
-/* Focus visible (accessibilité) */
 .group-card:focus,
 .educ-card:focus,
 .qSelectCard:focus{
@@ -362,23 +373,23 @@ select:focus{
 
 .group-card:hover,
 .educ-card:hover,
-.qSelectCard:hover {
+.qSelectCard:hover{
   transform: translateY(-1px);
 }
 
 .group-card:active,
 .educ-card:active,
-.qSelectCard:active {
+.qSelectCard:active{
   transform: scale(0.995);
 }
 
 .group-card.is-selected,
-.educ-card.is-selected {
+.educ-card.is-selected{
   outline: 3px solid rgba(0, 0, 0, 0.22);
 }
 
 .group-badge,
-.qSelectBadge {
+.qSelectBadge{
   width: 42px;
   height: 42px;
   border-radius: 12px;
@@ -390,11 +401,14 @@ select:focus{
   flex: 0 0 auto;
 }
 
-.group-name {
+.group-name,
+.educ-name,
+.qSelectTitle,
+.summaryQTitle{
   font-weight: 900;
 }
 
-.educ-photo {
+.educ-photo{
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -403,16 +417,14 @@ select:focus{
   flex: 0 0 auto;
 }
 
-.educ-name {
-  font-weight: 900;
-}
-
-.educ-role {
+.educ-role,
+.qSelectHint,
+.modeHint,
+.summaryAnswer{
   opacity: 0.85;
 }
 
-/* Overlay questionnaire */
-#modeOverlay {
+#modeOverlay{
   position: fixed;
   inset: 0;
   display: flex;
@@ -424,7 +436,7 @@ select:focus{
   z-index: 9999;
 }
 
-.modePanel {
+.modePanel{
   width: min(1100px, 100%);
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 16px;
@@ -433,97 +445,51 @@ select:focus{
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
-.modeTitle {
+.modeTitle{
   margin: 0 0 8px;
 }
 
-.modeHint {
+.modeHint{
   margin: 0 0 10px;
-  opacity: 0.8;
 }
 
-.qSelectGrid {
+.qSelectGrid{
   grid-template-columns: repeat(3, minmax(220px, 1fr));
   gap: 10px;
 }
 
-.qSelectCard {
+.qSelectCard{
   padding: 12px;
 }
 
-.qSelectTitle {
-  font-weight: 900;
-}
-
-.qSelectHint {
-  opacity: 0.8;
-  font-size: 0.95em;
-}
-
-@media (max-width: 900px) {
-  .qSelectGrid {
-    grid-template-columns: repeat(2, minmax(210px, 1fr));
-  }
-}
-@media (max-width: 560px) {
-  .qSelectGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Récap */
-.summaryList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.summaryCard {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 16px;
-  padding: 12px;
-  background: #fff;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-}
-
-.summaryTop {
+.summaryTop{
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
 }
 
-.summaryQTitle {
-  font-weight: 900;
-  margin: 0 0 6px;
-}
-
-.summaryAnswer {
-  opacity: 0.95;
-}
-
-.summaryPictos {
+.summaryPictos{
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   align-items: center;
 }
 
-.summaryPictos img {
+.summaryPictos img{
   height: 52px;
   width: auto;
   object-fit: contain;
 }
 
-.summaryMeta {
+.summaryMeta{
   margin-top: 10px;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.metaChip {
+.metaChip{
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -534,29 +500,16 @@ select:focus{
   font-weight: 700;
 }
 
-/* Pictos question + choix */
-.qPictoWrap {
-  margin: 10px 0 6px;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
+.summaryOtherAnswer{
+  margin-top:8px;
+  padding:8px 10px;
+  border-radius:12px;
+  background: rgba(0,0,0,.04);
+  border:1px dashed rgba(0,0,0,.12);
+  font-size:.95rem;
 }
 
-.qPicto {
-  height: 70px;
-  width: auto;
-  object-fit: contain;
-}
-
-.choiceRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 10px 0;
-}
-
-.choiceLabel {
+.choiceLabel{
   display: flex;
   align-items: center;
   gap: 10px;
@@ -564,22 +517,21 @@ select:focus{
   flex: 1;
 }
 
-.choicePicto {
+.choicePicto{
   height: 44px;
   width: 44px;
   object-fit: contain;
   margin-left: auto;
 }
 
-/* Nav */
-.navRow3 {
+.navRow3{
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
-.centerActions {
+.centerActions{
   display: flex;
   align-items: center;
   justify-content: center;
@@ -587,20 +539,18 @@ select:focus{
   min-width: 110px;
 }
 
-/* =========================
-   Scale question
-   ========================= */
-.scaleWrap {
+/* Scale */
+.scaleWrap{
   margin-top: 12px;
 }
 
-.scaleFaces {
+.scaleFaces{
   display: flex;
   gap: 10px;
   margin: 6px 0 12px;
 }
 
-.scaleFace {
+.scaleFace{
   font-size: 46px;
   display: flex;
   justify-content: center;
@@ -608,7 +558,41 @@ select:focus{
   flex: 1;
 }
 
-.scaleRange {
+.scaleRange{
   width: 100%;
   height: 36px;
+}
+
+@media (max-width: 900px){
+  .qSelectGrid{
+    grid-template-columns: repeat(2, minmax(210px, 1fr));
+  }
+}
+
+@media (max-width: 560px){
+  .qSelectGrid{
+    grid-template-columns: 1fr;
+  }
+
+  .navRow3{
+    align-items:stretch;
+  }
+
+  .centerActions{
+    min-width:unset;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  #choices,
+  .summaryList,
+  #pdfArea{
+    animation: none;
+  }
+
+  .btn,
+  .choiceRow,
+  .iconBtn{
+    transition: none;
+  }
 }

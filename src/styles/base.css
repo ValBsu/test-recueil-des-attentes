@@ -3,23 +3,22 @@
   --font: Arial, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 
   /* ===== Couleurs charte ===== */
-  --brand-green: #76b82a;      /* vert moyen */
-  --brand-green-dark: #1c6b24; /* vert foncé */
-  --brand-green-pale: #d0df8f; /* vert pâle */
-  --brand-duck: #557e82;       /* bleu canard */
-  --brand-water: #009e9c;      /* vert d’eau */
-  --brand-gray: #656a74;       /* gris */
-  --brand-rasp: #c6037f;       /* framboise */
-  --brand-yellow: #feca1d;     /* jaune */
+  --brand-green: #76b82a;
+  --brand-green-dark: #1c6b24;
+  --brand-green-pale: #d0df8f;
+  --brand-duck: #557e82;
+  --brand-water: #009e9c;
+  --brand-gray: #656a74;
+  --brand-rasp: #c6037f;
+  --brand-yellow: #feca1d;
 
-  /* ===== UI (dérivés) ===== */
+  /* ===== UI ===== */
   --bg:#f6f8fb;
   --surface:#ffffff;
   --text:#1b1f2a;
   --muted:#5b667a;
   --line:#e2e7f0;
 
-  /* Garde tes noms de variables pour ne rien casser */
   --primary: var(--brand-green);
   --primary-dark: var(--brand-green-dark);
   --primary-soft: color-mix(in srgb, var(--brand-green-pale) 65%, white 35%);

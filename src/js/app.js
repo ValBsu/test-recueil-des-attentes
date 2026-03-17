@@ -3,7 +3,7 @@
    1) Overlay -> choisir questionnaire
    2) Choisir pôle (uniquement pôles visibles)
    3) Choisir pro (uniquement pros)
-   4) Questionnaire (audio, dictée, pictos, progress)
+   4) Questionnaire (audio question uniquement, réponses parlées au survol/clic, réponse libre complémentaire, progress)
    5) Récap (chrono + pictos) + envoi netlify + téléchargement PDF (OFFLINE OK, rendu identique)
 */
 
@@ -52,7 +52,8 @@ let questionnaire = null;
 let fixedPoleFromOverlay = "";
 let selectedPole = "";
 let qIndex = 0;
-let answers = {}; // qId -> value
+let answers = {};      // qId -> valeur principale
+let otherAnswers = {}; // qId -> texte "autre réponse"
 
 let quizBox = null;
 
@@ -65,6 +66,7 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 let recog = null;
 let listening = false;
 let interimBaseValue = "";
+let activeDictationField = null;
 
 /* =========================
    Données (éducateurs / pôles)
@@ -151,6 +153,14 @@ function getCurrentQuestion() {
   return qs[qIndex];
 }
 
+function shouldShowOtherAnswerField(q) {
+  return (q?.type || "single") !== "text";
+}
+
+function getOtherAnswerValue(qId) {
+  return String(otherAnswers[qId] || "").trim();
+}
+
 /* =========================
    Identité obligatoire (Nom/Prénom/Âge)
    ========================= */
@@ -176,12 +186,19 @@ function isAnswered(val) {
   return String(val).trim() !== "";
 }
 
+function hasAnyAnswerForQuestion(q) {
+  const main = answers[q.id];
+  const other = getOtherAnswerValue(q.id);
+  return isAnswered(main) || other !== "";
+}
+
 function focusFirstAnswerField() {
   const el =
     document.querySelector(".textAnswer") ||
     document.querySelector("#choices input[type='radio']") ||
     document.querySelector("#choices input[type='checkbox']") ||
     document.querySelector("#choices input") ||
+    document.querySelector(".otherAnswerInput") ||
     null;
   if (el) el.focus();
 }
@@ -211,6 +228,7 @@ function speakHover(text) {
 }
 
 function speakFR(text) {
+  if (!text) return;
   if (!("speechSynthesis" in window)) {
     alert("Audio non disponible sur ce navigateur.");
     return;
@@ -221,6 +239,14 @@ function speakFR(text) {
   u.rate = 0.95;
   u.pitch = 0.9;
   window.speechSynthesis.speak(u);
+}
+
+function bindSpeakInteractions(target, text) {
+  if (!target || !text) return;
+  target.addEventListener("mouseenter", () => speakHover(text));
+  target.addEventListener("focus", () => speakHover(text), true);
+  target.addEventListener("click", () => speakFR(text));
+  target.addEventListener("touchstart", () => speakFR(text), { passive: true });
 }
 
 /* =========================
@@ -279,6 +305,7 @@ function showPoleStep() {
   if (educStep) educStep.style.display = "none";
   if (educOut) educOut.textContent = "";
 }
+
 function showEducStep() {
   if (poleStep) poleStep.style.display = "none";
   if (educStep) educStep.style.display = "";
@@ -351,11 +378,12 @@ function resetForNewQuestionnaire(item) {
   questionnaire = null;
   qIndex = 0;
   answers = {};
+  otherAnswers = {};
   quizBox = null;
   chronoStartMs = 0;
   chronoEndMs = 0;
+  activeDictationField = null;
 
-  // reset educator
   if (select) {
     select.innerHTML = `<option value="">— Sélectionner —</option>`;
     select.value = "";
@@ -433,6 +461,7 @@ function renderEducatorsForGroup(group) {
     const speakText = `${e.name}. ${e.role}.`;
     card.addEventListener("mouseenter", () => speakHover(speakText));
     card.addEventListener("focus", () => speakHover(speakText));
+    card.addEventListener("touchstart", () => speakFR(speakText), { passive: true });
 
     card.addEventListener("click", () => {
       const id = e.id || normalizeId(e.name);
@@ -553,9 +582,11 @@ function getQuestionPictoFiles(q) {
   const single = q?.pictogram || q?.picto || q?.pictogramme || "";
   return single ? [single] : [];
 }
+
 function getChoicePictoFile(choice) {
   return choice?.pictogram || choice?.picto || choice?.pictogramme || "";
 }
+
 function updateQuestionPictoTop(q) {
   if (!quizBox?.pictoWrap) return;
   const files = getQuestionPictoFiles(q);
@@ -582,9 +613,57 @@ function updateQuestionPictoTop(q) {
 /* =========================
    Dictée (micro)
    ========================= */
-function getActiveTextArea() {
-  return document.querySelector(".textAnswer");
+function getVisibleTextInputs() {
+  return Array.from(document.querySelectorAll(".textAnswer, .otherAnswerInput"))
+    .filter((el) => el && el.offsetParent !== null);
 }
+
+function getActiveTextArea() {
+  const active = document.activeElement;
+  if (
+    active &&
+    active.matches &&
+    active.matches(".textAnswer, .otherAnswerInput")
+  ) {
+    return active;
+  }
+
+  if (
+    activeDictationField &&
+    document.body.contains(activeDictationField) &&
+    activeDictationField.offsetParent !== null
+  ) {
+    return activeDictationField;
+  }
+
+  const q = getCurrentQuestion();
+  if (q && (q?.type || "single") === "text") {
+    const main = document.querySelector(".textAnswer");
+    if (main) return main;
+  }
+
+  const other = document.querySelector(".otherAnswerInput");
+  if (other) return other;
+
+  const anyVisible = getVisibleTextInputs()[0] || null;
+  return anyVisible;
+}
+
+function saveTextareaValueToState(textarea) {
+  if (!textarea) return;
+  const q = getCurrentQuestion();
+  if (!q) return;
+
+  if (textarea.classList.contains("textAnswer")) {
+    answers[q.id] = textarea.value;
+    return;
+  }
+
+  if (textarea.classList.contains("otherAnswerInput")) {
+    otherAnswers[q.id] = textarea.value;
+  }
+}
+
 function setMicUI(on) {
   listening = on;
   if (!quizBox?.mic) return;
@@ -594,12 +673,8 @@ function setMicUI(on) {
 }
 
 function commitCurrentTextAnswerIfAny() {
-  if (!questionnaire) return;
-  const q = getCurrentQuestion();
-  if (!q) return;
-  if ((q?.type || "single") !== "text") return;
-  const ta = document.querySelector(".textAnswer");
-  if (ta) answers[q.id] = ta.value;
+  const fields = getVisibleTextInputs();
+  fields.forEach((field) => saveTextareaValueToState(field));
 }
 
 function setupSpeechRecognitionIfNeeded() {
@@ -628,8 +703,7 @@ function setupSpeechRecognitionIfNeeded() {
 
     if (finalText) {
       ta.value = (base + finalText).trim();
-      const q = getCurrentQuestion();
-      if (q) answers[q.id] = ta.value;
+      saveTextareaValueToState(ta);
       interimBaseValue = ta.value.trim();
     } else if (interim) {
       ta.value = (base + interim).trim();
@@ -638,26 +712,25 @@ function setupSpeechRecognitionIfNeeded() {
 
   recog.onerror = (e) => {
     setMicUI(false);
-    if (e?.error === "not-allowed") alert("Autorise l’accès au micro pour utiliser la dictée.");
+    if (e?.error === "not-allowed") {
+      alert("Autorise l’accès au micro pour utiliser la dictée.");
+    }
   };
 
   recog.onend = () => {
     setMicUI(false);
-    commitCurrentTextAnswerIfAny();
+    const ta = getActiveTextArea();
+    if (ta) saveTextareaValueToState(ta);
   };
 }
 
 function toggleDictation() {
-  const q = getCurrentQuestion();
-  if (!q) return;
+  const ta = getActiveTextArea();
 
-  if ((q?.type || "single") !== "text") {
-    alert("Le micro est disponible seulement pour les réponses libres.");
+  if (!ta) {
+    alert("Aucune zone de texte disponible pour la dictée.");
     return;
   }
-
-  const ta = getActiveTextArea();
-  if (!ta) return;
 
   if (!SpeechRecognition) {
     ta.focus();
@@ -671,6 +744,7 @@ function toggleDictation() {
   if (!listening) {
     try {
       ta.focus();
+      activeDictationField = ta;
       interimBaseValue = ta.value.trim();
       recog.start();
       setMicUI(true);
@@ -678,7 +752,7 @@ function toggleDictation() {
   } else {
     try { recog.stop(); } catch (e) {}
     setMicUI(false);
-    commitCurrentTextAnswerIfAny();
+    saveTextareaValueToState(ta);
   }
 }
 
@@ -705,12 +779,7 @@ function updateProgressUI() {
    Questionnaire UI
    ========================= */
 function buildSpeechTextForQuestion(q) {
-  const type = q.type || "single";
-  if (type === "text") return `${q.title}. Réponse libre.`;
-  if (type === "scale") return `${q.title}. Déplace le curseur.`;
-
-  const choices = (q.choices || []).map((c) => c.label).join(". ");
-  return choices ? `${q.title}. Choix possibles : ${choices}.` : `${q.title}.`;
+  return String(q?.title || "Question");
 }
 
 function renderScaleQuestion(q) {
@@ -748,10 +817,41 @@ function renderScaleQuestion(q) {
     const v = Number(range.value);
     answers[q.id] = Number.isFinite(v) ? v : range.value;
   });
+
   answers[q.id] = Number(range.value);
 
   wrap.appendChild(facesRow);
   wrap.appendChild(range);
+  quizBox.choices.appendChild(wrap);
+}
+
+function renderOtherAnswerField(q) {
+  if (!quizBox?.choices || !shouldShowOtherAnswerField(q)) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "otherAnswerWrap";
+
+  const label = document.createElement("label");
+  label.className = "otherAnswerLabel";
+  label.setAttribute("for", `other_${q.id}`);
+  label.textContent = "Autre réponse (facultatif)";
+
+  const textarea = document.createElement("textarea");
+  textarea.className = "otherAnswerInput";
+  textarea.id = `other_${q.id}`;
+  textarea.rows = 2;
+  textarea.placeholder = "Écris une autre réponse ici…";
+  textarea.value = otherAnswers[q.id] || "";
+  textarea.addEventListener("input", () => {
+    otherAnswers[q.id] = textarea.value;
+    activeDictationField = textarea;
+  });
+  textarea.addEventListener("focus", () => {
+    activeDictationField = textarea;
+  });
+
+  wrap.appendChild(label);
+  wrap.appendChild(textarea);
   quizBox.choices.appendChild(wrap);
 }
 
@@ -830,16 +930,14 @@ function ensureQuizBox() {
     const q = getCurrentQuestion();
     if (!q) return;
 
-    const val = answers[q.id];
-
-    if (isIdentityQuestion(q) && !isAnswered(val)) {
+    if (isIdentityQuestion(q) && !hasAnyAnswerForQuestion(q)) {
       if (quizBox?.hint) quizBox.hint.textContent = "Nom / prénom / âge : obligatoire pour continuer.";
       focusFirstAnswerField();
       return;
     }
 
     const required = q.required !== false;
-    if (required && !isAnswered(val)) {
+    if (required && !hasAnyAnswerForQuestion(q)) {
       if (quizBox?.hint) quizBox.hint.textContent = "Réponds pour continuer.";
       focusFirstAnswerField();
       return;
@@ -868,6 +966,8 @@ function renderQuestion() {
     setMicUI(false);
   }
 
+  activeDictationField = null;
+
   const q = getCurrentQuestion();
   if (!q) {
     alert("Questionnaire vide ou invalide.");
@@ -883,6 +983,7 @@ function renderQuestion() {
 
   if (type === "scale") {
     renderScaleQuestion(q);
+    renderOtherAnswerField(q);
     quizBox.prev.disabled = qIndex === 0;
     quizBox.next.textContent = (qIndex === safeQuestionsArray(questionnaire).length - 1) ? "Terminer →" : "Suivant →";
     updateProgressUI();
@@ -895,7 +996,13 @@ function renderQuestion() {
     textarea.rows = 4;
     textarea.placeholder = q.placeholder || "Écris ta réponse ici…";
     textarea.value = answers[q.id] || "";
-    textarea.addEventListener("input", () => (answers[q.id] = textarea.value));
+    textarea.addEventListener("input", () => {
+      answers[q.id] = textarea.value;
+      activeDictationField = textarea;
+    });
+    textarea.addEventListener("focus", () => {
+      activeDictationField = textarea;
+    });
     quizBox.choices.appendChild(textarea);
   } else {
     const isMultiple = q.type === "multiple";
@@ -920,14 +1027,12 @@ function renderQuestion() {
           let arr = Array.isArray(answers[q.id]) ? [...answers[q.id]] : [];
           if (input.checked) {
             if (!arr.includes(c.value)) arr.push(c.value);
-            speakFR(c.label);
           } else {
             arr = arr.filter((v) => v !== c.value);
           }
           answers[q.id] = arr;
         } else {
           answers[q.id] = c.value;
-          speakFR(c.label);
         }
       });
 
@@ -950,10 +1055,16 @@ function renderQuestion() {
         label.appendChild(img);
       }
 
+      bindSpeakInteractions(row, c.label);
+      bindSpeakInteractions(label, c.label);
+      bindSpeakInteractions(input, c.label);
+
       row.appendChild(input);
       row.appendChild(label);
       quizBox.choices.appendChild(row);
     });
+
+    renderOtherAnswerField(q);
   }
 
   quizBox.prev.disabled = qIndex === 0;
@@ -999,6 +1110,15 @@ function getAnswerLabel(q, val) {
   }
 
   return (q.choices || []).find((c) => c.value === val)?.label || "";
+}
+
+function getCombinedAnswerLabel(q, val) {
+  const main = getAnswerLabel(q, val);
+  const other = getOtherAnswerValue(q.id);
+
+  if (main && other) return `${main} | Autre : ${other}`;
+  if (other) return `Autre : ${other}`;
+  return main;
 }
 
 function getAnswerPictos(q, val) {
@@ -1061,10 +1181,8 @@ function waitImagesLoaded(container) {
 async function captureElementToCanvas(el) {
   const html2canvas = assertHtml2Canvas();
 
-  // On attend que les pictos soient chargés pour éviter des images vides dans le PDF
   await waitImagesLoaded(el);
 
-  // Force un fond blanc pour éviter transparence moche en PDF
   const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
@@ -1102,28 +1220,23 @@ async function buildPdfFromRecapElement(el) {
 
   const canvas = await captureElementToCanvas(el);
 
-  // A4 en points PDF
   const pageW = 595.28;
   const pageH = 841.89;
 
-  // Marges (en points)
   const margin = 28;
   const contentW = pageW - margin * 2;
   const contentH = pageH - margin * 2;
 
-  // On va scaler l'image pour qu'elle rentre en largeur A4 (contentW)
   const scale = contentW / canvas.width;
   const scaledTotalH = canvas.height * scale;
 
   const pdfDoc = await PDFDocument.create();
 
-  // Nombre de pages nécessaires
   const pagesCount = Math.max(1, Math.ceil(scaledTotalH / contentH));
 
   for (let p = 0; p < pagesCount; p++) {
     const page = pdfDoc.addPage([pageW, pageH]);
 
-    // Portion de canvas correspondant à cette page (en pixels)
     const sliceTopScaled = p * contentH;
     const sliceBottomScaled = Math.min((p + 1) * contentH, scaledTotalH);
     const sliceHScaled = sliceBottomScaled - sliceTopScaled;
@@ -1172,10 +1285,14 @@ function renderSummary() {
 
   const summary = qs.map((q) => {
     const val = answers[q.id] ?? "";
+    const other = getOtherAnswerValue(q.id);
+
     return {
       id: q.id,
       question: q.title,
-      answer: getAnswerLabel(q, val),
+      answer: getCombinedAnswerLabel(q, val),
+      rawAnswer: getAnswerLabel(q, val),
+      otherAnswer: other,
       qPictos: getQuestionPictoFiles(q),
       aPictos: getAnswerPictos(q, val),
       type: q.type || "single",
@@ -1216,13 +1333,18 @@ function renderSummary() {
         .map((f) => `<img src="${getPictoSrc(f)}" alt="" loading="lazy" onerror="this.style.display='none'"/>`)
         .join("");
 
+      const otherHtml = item.otherAnswer
+        ? `<div class="summaryOtherAnswer">Autre réponse : ${escapeHtml(item.otherAnswer)}</div>`
+        : "";
+
       const div = document.createElement("div");
       div.className = "summaryCard";
       div.innerHTML = `
         <div class="summaryTop">
           <div style="flex:1;">
             <div class="summaryQTitle">${escapeHtml(item.question)}</div>
-            <div class="summaryAnswer">${escapeHtml(item.answer || "")}</div>
+            <div class="summaryAnswer">${escapeHtml(item.rawAnswer || "")}</div>
+            ${otherHtml}
           </div>
           <div class="summaryPictos" aria-hidden="true">
             ${qPics}${aPics}
@@ -1239,7 +1361,6 @@ function renderSummary() {
     renderQuestion();
   });
 
-  // ✅ PDF: capture HTML -> PDF identique (multi-pages)
   $id("pdfBtn")?.addEventListener("click", async () => {
     const safeEduc = normalizeId(educLabel || "educateur") || "educateur";
     const stamp = new Date().toISOString().slice(0, 10);
@@ -1257,7 +1378,6 @@ function renderSummary() {
     }
   });
 
-  // ✅ Envoi: reste Netlify (online)
   $id("sendBtn")?.addEventListener("click", async () => {
     const hint = $id("sendHint");
     if (hint) hint.textContent = "Envoi en cours…";
@@ -1269,7 +1389,12 @@ function renderSummary() {
         body: JSON.stringify({
           educatorId,
           educatorLabel: educLabel,
-          summary: summary.map((x) => ({ question: x.question, answer: x.answer })),
+          summary: summary.map((x) => ({
+            question: x.question,
+            answer: x.rawAnswer,
+            otherAnswer: x.otherAnswer || "",
+            combinedAnswer: x.answer,
+          })),
           durationSeconds: Math.round(durationMs / 1000),
         }),
       });
