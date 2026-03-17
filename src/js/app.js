@@ -68,6 +68,9 @@ let listening = false;
 let interimBaseValue = "";
 let activeDictationField = null;
 
+/* Hover audio */
+let suppressHoverUntil = 0;
+
 /* =========================
    Données (éducateurs / pôles)
    ========================= */
@@ -212,9 +215,11 @@ let speakTimer = null;
 function speakHover(text) {
   if (!text) return;
   if (!("speechSynthesis" in window)) return;
+  if (Date.now() < suppressHoverUntil) return;
 
   window.clearTimeout(speakTimer);
   speakTimer = window.setTimeout(() => {
+    if (Date.now() < suppressHoverUntil) return;
     if (text === lastSpokenText) return;
     lastSpokenText = text;
 
@@ -247,6 +252,41 @@ function bindSpeakInteractions(target, text) {
   target.addEventListener("focus", () => speakHover(text), true);
   target.addEventListener("click", () => speakFR(text));
   target.addEventListener("touchstart", () => speakFR(text), { passive: true });
+}
+
+function questionHasSelectedChoice(q) {
+  if (!q) return false;
+  if (q.type === "text" || q.type === "scale") return false;
+
+  const current = answers[q.id];
+
+  if (q.type === "multiple") {
+    return Array.isArray(current) && current.length > 0;
+  }
+
+  return current !== undefined && current !== null && String(current).trim() !== "";
+}
+
+function bindChoiceSpeakInteractions(target, q, text) {
+  if (!target || !text) return;
+
+  target.addEventListener("mouseenter", () => {
+    if (questionHasSelectedChoice(q)) return;
+    speakHover(text);
+  });
+
+  target.addEventListener("focus", () => {
+    speakHover(text);
+  }, true);
+
+  target.addEventListener("click", () => {
+    suppressHoverUntil = Date.now() + 500;
+    speakFR(text);
+  });
+
+  target.addEventListener("touchstart", () => {
+    speakFR(text);
+  }, { passive: true });
 }
 
 /* =========================
@@ -383,6 +423,7 @@ function resetForNewQuestionnaire(item) {
   chronoStartMs = 0;
   chronoEndMs = 0;
   activeDictationField = null;
+  suppressHoverUntil = 0;
 
   if (select) {
     select.innerHTML = `<option value="">— Sélectionner —</option>`;
@@ -967,6 +1008,7 @@ function renderQuestion() {
   }
 
   activeDictationField = null;
+  suppressHoverUntil = 0;
 
   const q = getCurrentQuestion();
   if (!q) {
@@ -1036,6 +1078,10 @@ function renderQuestion() {
         }
       });
 
+      input.addEventListener("click", () => {
+        suppressHoverUntil = Date.now() + 500;
+      });
+
       const label = document.createElement("label");
       label.setAttribute("for", id);
       label.className = "choiceLabel";
@@ -1055,9 +1101,9 @@ function renderQuestion() {
         label.appendChild(img);
       }
 
-      bindSpeakInteractions(row, c.label);
-      bindSpeakInteractions(label, c.label);
-      bindSpeakInteractions(input, c.label);
+      bindChoiceSpeakInteractions(row, q, c.label);
+      bindChoiceSpeakInteractions(label, q, c.label);
+      bindChoiceSpeakInteractions(input, q, c.label);
 
       row.appendChild(input);
       row.appendChild(label);
