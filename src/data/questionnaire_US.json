@@ -42,7 +42,7 @@
         { "value": "aide", "label": "Je demande de l’aide à un éducateur", "pictogram": "aider.png" },
         { "value": "fache", "label": "Je crie, tape, insulte", "pictogram": "15463_300.png" },
         { "value": "calme", "label": "Je respire pour me calmer", "pictogram": "respirer.png" },
-        { "value": "jeter", "label": "Je jète des objets", "pictogram": "casser.png" }
+        { "value": "jeter", "label": "Je jete des objets", "pictogram": "casser.png" }
       ],
       "pictogram": "colere.png"
     },
@@ -60,7 +60,7 @@
     {
         "id" : "q7",
         "title" : "A la maison tu manges bien ?",
-        "type" : "multiple",
+        "type" : "single",
         "choices" : [
             { "value" : "oui", "label" : "Oui", "pictogram": "bien.png" },
             { "value" : "non", "label" : "Non", "pictogram": "non.png" },
@@ -71,7 +71,7 @@
     {
       "id": "q8",
       "title": "Tu dors bien à la maison?",
-      "type": "multiple",
+      "type": "single",
       "pictogram" : "lit.png",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
@@ -92,7 +92,7 @@
     {
       "id": "q10",
       "title": "est ce que tu vois Mélanie l'infirmière ?",
-      "type": "multiple",
+      "type": "single",
       "pictogram": "infirmerie.png",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
@@ -137,7 +137,7 @@
     {
       "id" : "q14",
       "title" : "Fais tu du sport en dehors de l'IME ?",
-      "type": "single",
+      "type": "multiple",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
         { "value": "pole3", "label": "Oui au Pôle 3 avec Théo", "pictogram": "pole3.png" },
