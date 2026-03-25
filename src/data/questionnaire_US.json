@@ -2,55 +2,53 @@
   "title": "Recueil des attentes",
   "questions": [
     {
-  "id": "q_open_1",
-  "type": "text",
-  "title": "Quel est ton prénom?",
-  "placeholder": "Tu peux écrire ici…",
-  "required": false
-},
-{
-  "id": "q_open_2",
-  "type": "text",
-  "title": "Quel est ton nom ?",
-  "placeholder": "Tu peux écrire ici…",
-  "required": false
-},
-{
-  "id": "q_open_3",
-  "type": "text",
-  "title": "Quel âge as-tu ?",
-  "placeholder": "Tu peux écrire ici…",
-  "required": false
-},
+      "id": "q_open_1",
+      "type": "text",
+      "title": "Quel est ton prénom ?",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    },
     {
-  "id": "q4",
-  "title": "Comment te sens-tu ?",
-  "type": "scale",
-  "min": 0,
-  "max": 100,
-  "default": 50,
-  "labels": ["Très mal", "Mal", "Bof", "Bien", "Très bien"],
-  "pictogram": "comment-ca-va.png"
-},
-
-
+      "id": "q_open_2",
+      "type": "text",
+      "title": "Quel est ton nom ?",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    },
+    {
+      "id": "q_open_3",
+      "type": "text",
+      "title": "Quel âge as-tu ?",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    },
+    {
+      "id": "q4",
+      "title": "Comment te sens-tu ?",
+      "type": "scale",
+      "min": 0,
+      "max": 100,
+      "default": 50,
+      "labels": ["Très mal", "Mal", "Bof", "Bien", "Très bien"],
+      "pictogram": "comment-ca-va.png"
+    },
     {
       "id": "q5",
-      "title": "Que fais-tu quand tu es en colère?",
+      "title": "Que fais-tu quand tu es en colère ?",
       "type": "single",
       "choices": [
         { "value": "aide", "label": "Je demande de l’aide à un éducateur", "pictogram": "aider.png" },
         { "value": "fache", "label": "Je crie, tape, insulte", "pictogram": "15463_300.png" },
         { "value": "calme", "label": "Je respire pour me calmer", "pictogram": "respirer.png" },
-        { "value": "jeter", "label": "Je jete des objets", "pictogram": "casser.png" }
+        { "value": "jeter", "label": "Je jette des objets", "pictogram": "casser.png" }
       ],
       "pictogram": "colere.png"
     },
     {
       "id": "q6",
-      "title": "Est ce que tu manges bien au self ?",
+      "title": "Est-ce que tu manges bien au self ?",
       "type": "single",
-      "pictogram" : "coin-repas.png",
+      "pictogram": "coin-repas.png",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
         { "value": "non", "label": "Non", "pictogram": "non.png" },
@@ -58,21 +56,21 @@
       ]
     },
     {
-        "id" : "q7",
-        "title" : "A la maison tu manges bien ?",
-        "type" : "single",
-        "choices" : [
-            { "value" : "oui", "label" : "Oui", "pictogram": "bien.png" },
-            { "value" : "non", "label" : "Non", "pictogram": "non.png" },
-            { "value" : "je ne sais pas", "label" : "Je ne sais pas", "pictogram": "jenesaispas.png" }
-        ],
-        "pictogram" : "coin-repas.png"
+      "id": "q7",
+      "title": "À la maison, tu manges bien ?",
+      "type": "single",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
+        { "value": "non", "label": "Non", "pictogram": "non.png" },
+        { "value": "je ne sais pas", "label": "Je ne sais pas", "pictogram": "jenesaispas.png" }
+      ],
+      "pictogram": "coin-repas.png"
     },
     {
       "id": "q8",
-      "title": "Tu dors bien à la maison?",
+      "title": "Tu dors bien à la maison ?",
       "type": "single",
-      "pictogram" : "lit.png",
+      "pictogram": "lit.png",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
         { "value": "non", "label": "Non", "pictogram": "non.png" },
@@ -81,17 +79,17 @@
     },
     {
       "id": "q9",
-      "title": "Est ce que tu as de la psychomotricité avec Mathilde ?",
+      "title": "Est-ce que tu as de la psychomotricité avec Mathilde ?",
       "type": "single",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
         { "value": "non", "label": "Non", "pictogram": "non.png" }
       ],
       "pictogram": "psychomotricite.png"
-    },  
+    },
     {
       "id": "q10",
-      "title": "est ce que tu vois Mélanie l'infirmière ?",
+      "title": "Est-ce que tu vois Mélanie, l'infirmière ?",
       "type": "single",
       "pictogram": "infirmerie.png",
       "choices": [
@@ -101,32 +99,30 @@
       ]
     },
     {
-  "id": "q_open_11",
-  "type": "multiple",
-  "title": "Quelle psychologue vois-tu à l'IME ?",
-  "choices": [
-    { "value": "lucie", "label": "Lucie" },  
-    { "value": "louise", "label": "Louise" },
-    { "value": "camille", "label": "Camille" },
-    { "value": "frédérique", "label": "Frédérique" },
-    { "value": "je ne vois pas de psychologue", "label": "Je ne vois pas de psychologue" }
-    ]
+      "id": "q_open_11",
+      "type": "multiple",
+      "title": "Quelle psychologue vois-tu à l'IME ?",
+      "choices": [
+        { "value": "lucie", "label": "Lucie" },
+        { "value": "louise", "label": "Louise" },
+        { "value": "camille", "label": "Camille" },
+        { "value": "frédérique", "label": "Frédérique" },
+        { "value": "je ne vois pas de psychologue", "label": "Je ne vois pas de psychologue" }
+      ]
     },
     {
-  "id" : "q12",
-      "title" : "Tu as des copains à l'IME ?",
+      "id": "q12",
+      "title": "Tu as des copains à l'IME ?",
       "type": "single",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
-        { "value": "non", "label": "Non", "pictogram": "non.png" }  
+        { "value": "non", "label": "Non", "pictogram": "non.png" }
       ],
       "pictogram": "amis.png"
-    
     },
-
     {
-      "id" : "q13",
-      "title" : "Tu fais du sport à l'IME ?",
+      "id": "q13",
+      "title": "Tu fais du sport à l'IME ?",
       "type": "single",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
@@ -135,8 +131,8 @@
       "pictogram": "sport.png"
     },
     {
-      "id" : "q14",
-      "title" : "Fais tu du sport en dehors de l'IME ?",
+      "id": "q14",
+      "title": "Fais-tu du sport en dehors de l'IME ?",
       "type": "multiple",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
@@ -146,8 +142,8 @@
       ]
     },
     {
-      "id" : "q15",
-      "title" : "Ton emploi du temps de plait, tu le trouve comment ?",
+      "id": "q15",
+      "title": "Ton emploi du temps te plaît, tu le trouves comment ?",
       "type": "single",
       "choices": [
         { "value": "super", "label": "Super bien", "pictogram": "super.png" },
@@ -157,15 +153,15 @@
       "pictogram": "semaine.png"
     },
     {
-      "id" : "q16",
-      "title" : "Tu as des activités que tu n'aime pas à l'IME ?",
+      "id": "q16",
+      "title": "Tu as des activités que tu n'aimes pas à l'IME ?",
       "type": "text",
       "placeholder": "Tu peux écrire ici…",
       "required": false
     },
     {
-      "id" : "q17",
-      "title" : "Tu as des activités que tu aimes à l'IME ?",
+      "id": "q17",
+      "title": "Tu as des activités que tu aimes à l'IME ?",
       "type": "text",
       "placeholder": "Tu peux écrire ici…",
       "required": false
