@@ -1,19 +1,166 @@
 {
-  "title": "Recueil des attentes famille",
+  "title": "Recueil des attentes - Famille",
   "questions": [
     {
-  "id": "q_open_1",
-  "type": "text",
-  "title": "Nom de famille de l'enfant ?",
-  "placeholder": "Tu peux écrire ici…",
-  "required": false
-},
-{
-  "id": "q_open_2",
-  "type": "text",
-  "title": "Prénom de famille de l'enfant ?",
-  "placeholder": "Tu peux écrire ici…",
-  "required": false
+      "id": "q_open_1",
+      "type": "text",
+      "title": "Nom et prénom de la personne accompagnée",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    },
+    {
+      "id": "q_open_2",
+      "type": "text",
+      "title": "Document rempli par",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    },
+    {
+      "id": "q1",
+      "title": "L’autonomie",
+      "type": "multiple",
+      "choices": [
+        {
+          "value": "autonomie_vie_quotidienne",
+          "label": "Aider notre enfant à acquérir plus d’autonomie dans la vie quotidienne (alimentation, hygiène, rythme : réveil, coucher…)."
+        },
+        {
+          "value": "autonomie_deplacements",
+          "label": "Soutenir notre enfant pour qu’il utilise les transports ou se déplace seul (bus, vélo, à pieds)."
+        }
+      ]
+    },
+      {
+      "id": "q2",
+      "title": "La construction identitaire et l’épanouissement personnel",
+      "type": "multiple",
+      "choices": [
+        {
+          "value": "devenir_adolescent",
+          "label": "Aider notre enfant à devenir adolescent."
+        },
+        {
+          "value": "devenir_adulte",
+          "label": "Aider notre enfant à devenir adulte."
+        },
+        {
+          "value": "faire_ses_choix",
+          "label": "Aider notre enfant à faire ses choix."
+        },
+        {
+          "value": "activites_extrascolaires",
+          "label": "Aider notre enfant à participer à des activités extra-scolaires (activité sportive, activité artistique et culturelle)."
+        },
+        {
+          "value": "vie_affective_sexuelle",
+          "label": "Soutenir notre enfant dans sa vie affective et sexuelle."
+        }
+      ]
+    },
+    {
+      "id": "q3",
+      "title": "Le développement des apprentissages",
+      "type": "multiple",
+      "choices": [
+        {
+          "value": "apprentissages_scolaires",
+          "label": "Favoriser le développement des apprentissages scolaires de notre enfant."
+        },
+        {
+          "value": "apprentissages_preprofessionnels",
+          "label": "Favoriser le développement des apprentissages préprofessionnels de notre enfant."
+        },
+        {
+          "value": "projet_professionnel",
+          "label": "Aider notre enfant à définir son projet professionnel (stages…)."
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "title": "L’environnement familial et matériel",
+      "type": "multiple",
+      "choices": [
+        {
+          "value": "demarches_administratives",
+          "label": "Soutenir notre famille ou notre enfant par rapport aux démarches administratives (dossier MDA, logement, mesures de protection, soutien financier, orientation)."
+        },
+        {
+          "value": "aide_au_repit",
+          "label": "Soutenir notre famille pour bénéficier d’aide au répit (aide à domicile, séjour adapté…)."
+        },
+        {
+          "value": "relations_familiales",
+          "label": "Soutenir les relations au sein de la famille."
+        },
+        {
+          "value": "situations_particulieres",
+          "label": "Situations particulières."
+        }
+      ]
+    },
+    {
+      "id": "q5",
+      "title": "La santé",
+      "type": "multiple",
+      "choices": [
+        {
+          "value": "comprendre_handicap",
+          "label": "Aider notre famille / nous aider à comprendre le handicap et les difficultés de notre enfant."
+        },
+        {
+          "value": "acces_aux_soins",
+          "label": "Soutenir notre famille ou notre enfant pour un meilleur accès au soin."
+        },
+        {
+          "value": "bilans_prises_en_charge",
+          "label": "Permettre à notre enfant de bénéficier de bilans et/ou de prises en charges (orthophoniste, psychomotricienne, psychologue…)."
+        },
+        {
+          "value": "outils_quotidien",
+          "label": "Rechercher ou partager des outils et/ou des moyens pour aider notre enfant à mieux vivre son quotidien (alimentation, sommeil, troubles du comportement, bien être)."
+        }
+      ]
+    },
+    {
+      "id": "q6",
+      "title": "La socialisation",
+      "type": "multiple",
+      "choices": [
+        {
+          "value": "relation_aux_autres",
+          "label": "Aider notre enfant à être dans une relation adaptée aux autres (relation familiale, amicale, amoureuse)."
+        },
+        {
+          "value": "codes_sociaux",
+          "label": "Favoriser l’apprentissage des codes et des usages sociaux chez notre enfant."
+        },
+        {
+          "value": "droits_devoirs",
+          "label": "Aider notre enfant à repérer et exercer ses droits et ses devoirs en tant que citoyen."
+        }
+      ]
+    },
+    {
+      "id": "q7",
+      "type": "text",
+      "title": "Concernant le rythme des échanges avec les professionnels du dispositif médico-éducatif, quels seraient vos besoins ?",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    },
+    {
+      "id": "q8",
+      "type": "text",
+      "title": "Quelle forme privilégieriez-vous pour les échanges ?",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    },
+    {
+      "id": "q9",
+      "type": "text",
+      "title": "Concernant les autres professionnels en dehors du dispositif médico-éducatif et intervenants dans l’accompagnement de votre enfant, avez-vous des souhaits particuliers ?",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    }
+  ]
 }
-    ]
-    }   

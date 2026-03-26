@@ -164,6 +164,10 @@ function getOtherAnswerValue(qId) {
   return String(otherAnswers[qId] || "").trim();
 }
 
+function isFamilyQuestionnaire() {
+  return selectedQuestionnaireKey === "famille";
+}
+
 /* =========================
    Identité obligatoire (Nom/Prénom/Âge)
    ========================= */
@@ -269,6 +273,8 @@ function questionHasSelectedChoice(q) {
 
 function bindChoiceSpeakInteractions(target, q, text) {
   if (!target || !text) return;
+
+  if (isFamilyQuestionnaire()) return;
 
   target.addEventListener("mouseenter", () => {
     if (questionHasSelectedChoice(q)) return;
