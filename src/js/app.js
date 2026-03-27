@@ -115,9 +115,10 @@ const QUESTIONNAIRES = [
   { key: "pole_accueil", label: "Pôle accueil", hint: "Questionnaire Pôle Accueil", icon: "🏠", path: "./src/data/questionnaire_PA.json", fixedPole: "Pôle accueil" },
   { key: "pole_projet", label: "Pôle projet", hint: "Questionnaire Pôle Projet", icon: "🧩", path: "./src/data/questionnaire_PP.json", fixedPole: "Pôle projet" },
   { key: "pole_sortie", label: "Pôle sortie", hint: "Questionnaire Pôle Sortie", icon: "🚌", path: "./src/data/questionnaire_PS.json", fixedPole: "Pôle sortie" },
-
   { key: "unite_transversale", label: "Unité transversale", hint: "Questionnaire Unité Transversale", icon: "🔄", path: "./src/data/questionnaire_UT.json", fixedPole: "Unité transversale" },
   { key: "unite_specifique", label: "Unité spécifique", hint: "Questionnaire Unité Spécifique", icon: "🎯", path: "./src/data/questionnaire_US.json", fixedPole: "Unité spécifique" },
+  { key: "pole_ulis", label: "ULIS", hint: "Questionnaire Pôle ULIS", icon: "🚌", path: "./src/data/questionnaire_ULIS.json", fixedPole: "ULIS" },  
+  { key: "pole_sessad", label: "SESSAD", hint: "Questionnaire Pôle SESSAD", icon: "🛵", path: "./src/data/questionnaire_SESSAD.json", fixedPole: "SESSAD" },
 ];
 
 /* =========================
