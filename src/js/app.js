@@ -105,6 +105,12 @@ const EDUCATORS = [
   { name: "Juliette Rousteau", role: "Monitrice éducatrice", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "juliette-rousteau" },
   { name: "Justine Meruz", role: "Monitrice éducatrice", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "justine-meruz" },
   { name: "Valentin Bésiau", role: "Moniteur éducateur", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "valentin-besiau" },
+
+  { name: "Marie Caillaud", role: "Éducatrice spécialisée", group: "SESSAD", photo: DEFAULT_EDUC_PHOTO, id: "marie-caillaud" },
+  { name: "Lucie Chaillou", role: "Conseillère CESF", group: "SESSAD", photo: DEFAULT_EDUC_PHOTO, id: "lucie-chaillou" },
+  { name: " Claire Ilias-Pillet", role: "Éducatrice spécialisée", group: "SESSAD", photo: DEFAULT_EDUC_PHOTO, id: "claire-ilias-pillet" },
+
+  { name: "Laura Roger", role: "Conseillère CESF", group: "Ulis", photo: DEFAULT_EDUC_PHOTO, id: "laura-roger" },
 ];
 
 const GROUPS = Array.from(new Set(EDUCATORS.map((e) => e.group)));
