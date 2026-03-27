@@ -79,7 +79,7 @@ let suppressHoverUntil = 0;
 
 /* Langue */
 const LANGS = ["fr", "en", "ar"];
-let currentLang = localStorage.getItem("recueil_lang") || "fr";
+let currentLang = "fr";
 if (!LANGS.includes(currentLang)) currentLang = "fr";
 
 const SPEECH_LANG_MAP = {
@@ -488,7 +488,6 @@ function getSearchableText(value) {
 function applyLanguageToDocument() {
   document.documentElement.lang = currentLang;
   document.body.classList.toggle("lang-ar", currentLang === "ar");
-  localStorage.setItem("recueil_lang", currentLang);
   updateLangButtons();
 }
 
