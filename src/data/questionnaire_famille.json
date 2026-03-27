@@ -1,165 +1,317 @@
 {
-  "title": "Recueil des attentes - Famille",
+  "title": {
+    "fr": "Recueil des attentes - Famille",
+    "en": "Needs collection - Family",
+    "ar": "جمع التوقعات - العائلة"
+  },
   "questions": [
     {
       "id": "q_open_1",
       "type": "text",
-      "title": "Nom et prénom de la personne accompagnée",
-      "placeholder": "Tu peux écrire ici…",
+      "title": {
+        "fr": "Nom et prénom de la personne accompagnée",
+        "en": "Last name and first name of the supported person",
+        "ar": "اسم ولقب الشخص المُرافَق"
+      },
+      "placeholder": {
+        "fr": "Tu peux écrire ici…",
+        "en": "You can write here…",
+        "ar": "يمكنك الكتابة هنا…"
+      },
       "required": false
     },
     {
       "id": "q_open_2",
       "type": "text",
-      "title": "Document rempli par",
-      "placeholder": "Tu peux écrire ici…",
+      "title": {
+        "fr": "Document rempli par",
+        "en": "Document completed by",
+        "ar": "تم ملء الوثيقة من طرف"
+      },
+      "placeholder": {
+        "fr": "Tu peux écrire ici…",
+        "en": "You can write here…",
+        "ar": "يمكنك الكتابة هنا…"
+      },
       "required": false
     },
     {
       "id": "q1",
-      "title": "L’autonomie",
+      "title": {
+        "fr": "L’autonomie",
+        "en": "Autonomy",
+        "ar": "الاستقلالية"
+      },
       "type": "multiple",
       "choices": [
         {
           "value": "autonomie_vie_quotidienne",
-          "label": "Aider notre enfant à acquérir plus d’autonomie dans la vie quotidienne (alimentation, hygiène, rythme : réveil, coucher…)."
+          "label": {
+            "fr": "Aider notre enfant à acquérir plus d’autonomie dans la vie quotidienne (alimentation, hygiène, rythme : réveil, coucher…).",
+            "en": "Help our child gain more autonomy in daily life (food, hygiene, routine: waking up, going to bed, etc.).",
+            "ar": "مساعدة طفلنا على اكتساب مزيد من الاستقلالية في الحياة اليومية (الأكل، النظافة، وتيرة اليوم: الاستيقاظ، النوم...)."
+          }
         },
         {
           "value": "autonomie_deplacements",
-          "label": "Soutenir notre enfant pour qu’il utilise les transports ou se déplace seul (bus, vélo, à pieds)."
+          "label": {
+            "fr": "Soutenir notre enfant pour qu’il utilise les transports ou se déplace seul (bus, vélo, à pieds).",
+            "en": "Support our child in using transportation or moving around independently (bus, bike, on foot).",
+            "ar": "دعم طفلنا لكي يستعمل وسائل النقل أو يتنقل بمفرده (الحافلة، الدراجة، مشيًا)."
+          }
         }
       ]
     },
-      {
+    {
       "id": "q2",
-      "title": "La construction identitaire et l’épanouissement personnel",
+      "title": {
+        "fr": "La construction identitaire et l’épanouissement personnel",
+        "en": "Identity building and personal development",
+        "ar": "بناء الهوية والتطور الشخصي"
+      },
       "type": "multiple",
       "choices": [
         {
           "value": "devenir_adolescent",
-          "label": "Aider notre enfant à devenir adolescent."
+          "label": {
+            "fr": "Aider notre enfant à devenir adolescent.",
+            "en": "Help our child grow into adolescence.",
+            "ar": "مساعدة طفلنا على الدخول في مرحلة المراهقة."
+          }
         },
         {
           "value": "devenir_adulte",
-          "label": "Aider notre enfant à devenir adulte."
+          "label": {
+            "fr": "Aider notre enfant à devenir adulte.",
+            "en": "Help our child become an adult.",
+            "ar": "مساعدة طفلنا على أن يصبح راشدًا."
+          }
         },
         {
           "value": "faire_ses_choix",
-          "label": "Aider notre enfant à faire ses choix."
+          "label": {
+            "fr": "Aider notre enfant à faire ses choix.",
+            "en": "Help our child make their own choices.",
+            "ar": "مساعدة طفلنا على اتخاذ اختياراته."
+          }
         },
         {
           "value": "activites_extrascolaires",
-          "label": "Aider notre enfant à participer à des activités extra-scolaires (activité sportive, activité artistique et culturelle)."
+          "label": {
+            "fr": "Aider notre enfant à participer à des activités extra-scolaires (activité sportive, activité artistique et culturelle).",
+            "en": "Help our child take part in extracurricular activities (sports, artistic and cultural activities).",
+            "ar": "مساعدة طفلنا على المشاركة في الأنشطة خارج المدرسة (رياضة، أنشطة فنية وثقافية)."
+          }
         },
         {
           "value": "vie_affective_sexuelle",
-          "label": "Soutenir notre enfant dans sa vie affective et sexuelle."
+          "label": {
+            "fr": "Soutenir notre enfant dans sa vie affective et sexuelle.",
+            "en": "Support our child in their emotional and sexual life.",
+            "ar": "دعم طفلنا في حياته العاطفية والجنسية."
+          }
         }
       ]
     },
     {
       "id": "q3",
-      "title": "Le développement des apprentissages",
+      "title": {
+        "fr": "Le développement des apprentissages",
+        "en": "Development of learning",
+        "ar": "تنمية التعلمات"
+      },
       "type": "multiple",
       "choices": [
         {
           "value": "apprentissages_scolaires",
-          "label": "Favoriser le développement des apprentissages scolaires de notre enfant."
+          "label": {
+            "fr": "Favoriser le développement des apprentissages scolaires de notre enfant.",
+            "en": "Encourage the development of our child’s school learning.",
+            "ar": "تشجيع تنمية التعلمات المدرسية لطفلنا."
+          }
         },
         {
           "value": "apprentissages_preprofessionnels",
-          "label": "Favoriser le développement des apprentissages préprofessionnels de notre enfant."
+          "label": {
+            "fr": "Favoriser le développement des apprentissages préprofessionnels de notre enfant.",
+            "en": "Encourage the development of our child’s pre-vocational learning.",
+            "ar": "تشجيع تنمية التعلمات ما قبل المهنية لطفلنا."
+          }
         },
         {
           "value": "projet_professionnel",
-          "label": "Aider notre enfant à définir son projet professionnel (stages…)."
+          "label": {
+            "fr": "Aider notre enfant à définir son projet professionnel (stages…).",
+            "en": "Help our child define their professional plan (internships, etc.).",
+            "ar": "مساعدة طفلنا على تحديد مشروعه المهني (تداريب، إلخ)."
+          }
         }
       ]
     },
     {
       "id": "q4",
-      "title": "L’environnement familial et matériel",
+      "title": {
+        "fr": "L’environnement familial et matériel",
+        "en": "Family and material environment",
+        "ar": "البيئة الأسرية والمادية"
+      },
       "type": "multiple",
       "choices": [
         {
           "value": "demarches_administratives",
-          "label": "Soutenir notre famille ou notre enfant par rapport aux démarches administratives (dossier MDA, logement, mesures de protection, soutien financier, orientation)."
+          "label": {
+            "fr": "Soutenir notre famille ou notre enfant par rapport aux démarches administratives (dossier MDA, logement, mesures de protection, soutien financier, orientation).",
+            "en": "Support our family or our child with administrative procedures (MDA file, housing, protective measures, financial support, orientation).",
+            "ar": "دعم أسرتنا أو طفلنا في الإجراءات الإدارية (ملف MDA، السكن، إجراءات الحماية، الدعم المالي، التوجيه)."
+          }
         },
         {
           "value": "aide_au_repit",
-          "label": "Soutenir notre famille pour bénéficier d’aide au répit (aide à domicile, séjour adapté…)."
+          "label": {
+            "fr": "Soutenir notre famille pour bénéficier d’aide au répit (aide à domicile, séjour adapté…).",
+            "en": "Support our family in accessing respite care (home help, adapted stays, etc.).",
+            "ar": "دعم أسرتنا للاستفادة من المساعدة على الاستراحة (مساعدة منزلية، إقامة ملائمة...)."
+          }
         },
         {
           "value": "relations_familiales",
-          "label": "Soutenir les relations au sein de la famille."
+          "label": {
+            "fr": "Soutenir les relations au sein de la famille.",
+            "en": "Support relationships within the family.",
+            "ar": "دعم العلاقات داخل الأسرة."
+          }
         },
         {
           "value": "situations_particulieres",
-          "label": "Situations particulières."
+          "label": {
+            "fr": "Situations particulières.",
+            "en": "Special situations.",
+            "ar": "حالات خاصة."
+          }
         }
       ]
     },
     {
       "id": "q5",
-      "title": "La santé",
+      "title": {
+        "fr": "La santé",
+        "en": "Health",
+        "ar": "الصحة"
+      },
       "type": "multiple",
       "choices": [
         {
           "value": "comprendre_handicap",
-          "label": "Aider notre famille / nous aider à comprendre le handicap et les difficultés de notre enfant."
+          "label": {
+            "fr": "Aider notre famille / nous aider à comprendre le handicap et les difficultés de notre enfant.",
+            "en": "Help our family / help us understand our child’s disability and difficulties.",
+            "ar": "مساعدة أسرتنا / مساعدتنا على فهم إعاقة طفلنا والصعوبات التي يواجهها."
+          }
         },
         {
           "value": "acces_aux_soins",
-          "label": "Soutenir notre famille ou notre enfant pour un meilleur accès au soin."
+          "label": {
+            "fr": "Soutenir notre famille ou notre enfant pour un meilleur accès au soin.",
+            "en": "Support our family or our child for better access to care.",
+            "ar": "دعم أسرتنا أو طفلنا من أجل وصول أفضل إلى الرعاية."
+          }
         },
         {
           "value": "bilans_prises_en_charge",
-          "label": "Permettre à notre enfant de bénéficier de bilans et/ou de prises en charges (orthophoniste, psychomotricienne, psychologue…)."
+          "label": {
+            "fr": "Permettre à notre enfant de bénéficier de bilans et/ou de prises en charge (orthophoniste, psychomotricienne, psychologue…).",
+            "en": "Enable our child to benefit from assessments and/or care support (speech therapist, psychomotor therapist, psychologist, etc.).",
+            "ar": "تمكين طفلنا من الاستفادة من التقييمات و/أو المتابعات (أخصائي النطق، أخصائي نفسي حركي، أخصائي نفسي...)."
+          }
         },
         {
           "value": "outils_quotidien",
-          "label": "Rechercher ou partager des outils et/ou des moyens pour aider notre enfant à mieux vivre son quotidien (alimentation, sommeil, troubles du comportement, bien être)."
+          "label": {
+            "fr": "Rechercher ou partager des outils et/ou des moyens pour aider notre enfant à mieux vivre son quotidien (alimentation, sommeil, troubles du comportement, bien être).",
+            "en": "Search for or share tools and/or ways to help our child live better day to day (food, sleep, behavior difficulties, well-being).",
+            "ar": "البحث عن أدوات و/أو وسائل أو مشاركتها لمساعدة طفلنا على عيش يومه بشكل أفضل (الأكل، النوم، اضطرابات السلوك، الرفاهية)."
+          }
         }
       ]
     },
     {
       "id": "q6",
-      "title": "La socialisation",
+      "title": {
+        "fr": "La socialisation",
+        "en": "Socialization",
+        "ar": "التنشئة الاجتماعية"
+      },
       "type": "multiple",
       "choices": [
         {
           "value": "relation_aux_autres",
-          "label": "Aider notre enfant à être dans une relation adaptée aux autres (relation familiale, amicale, amoureuse)."
+          "label": {
+            "fr": "Aider notre enfant à être dans une relation adaptée aux autres (relation familiale, amicale, amoureuse).",
+            "en": "Help our child build appropriate relationships with others (family, friendship, romantic relationships).",
+            "ar": "مساعدة طفلنا على إقامة علاقة مناسبة مع الآخرين (عائلية، صداقة، عاطفية)."
+          }
         },
         {
           "value": "codes_sociaux",
-          "label": "Favoriser l’apprentissage des codes et des usages sociaux chez notre enfant."
+          "label": {
+            "fr": "Favoriser l’apprentissage des codes et des usages sociaux chez notre enfant.",
+            "en": "Support our child in learning social codes and social uses.",
+            "ar": "تشجيع تعلم القواعد والعادات الاجتماعية لدى طفلنا."
+          }
         },
         {
           "value": "droits_devoirs",
-          "label": "Aider notre enfant à repérer et exercer ses droits et ses devoirs en tant que citoyen."
+          "label": {
+            "fr": "Aider notre enfant à repérer et exercer ses droits et ses devoirs en tant que citoyen.",
+            "en": "Help our child identify and exercise their rights and duties as a citizen.",
+            "ar": "مساعدة طفلنا على التعرف على حقوقه وواجباته وممارستها كمواطن."
+          }
         }
       ]
     },
     {
       "id": "q7",
       "type": "text",
-      "title": "Concernant le rythme des échanges avec les professionnels du dispositif médico-éducatif, quels seraient vos besoins ?",
-      "placeholder": "Tu peux écrire ici…",
+      "title": {
+        "fr": "Concernant le rythme des échanges avec les professionnels du dispositif médico-éducatif, quels seraient vos besoins ?",
+        "en": "Regarding the frequency of communication with professionals in the medico-educational service, what would your needs be?",
+        "ar": "فيما يخص وتيرة التبادل مع مهنيي الجهاز الطبي-التربوي، ما هي احتياجاتكم؟"
+      },
+      "placeholder": {
+        "fr": "Tu peux écrire ici…",
+        "en": "You can write here…",
+        "ar": "يمكنك الكتابة هنا…"
+      },
       "required": false
     },
     {
       "id": "q8",
       "type": "text",
-      "title": "Quelle forme privilégieriez-vous pour les échanges ?",
-      "placeholder": "Tu peux écrire ici…",
+      "title": {
+        "fr": "Quelle forme privilégieriez-vous pour les échanges ?",
+        "en": "Which form of communication would you prefer?",
+        "ar": "ما الشكل الذي تفضلونه للتبادل؟"
+      },
+      "placeholder": {
+        "fr": "Tu peux écrire ici…",
+        "en": "You can write here…",
+        "ar": "يمكنك الكتابة هنا…"
+      },
       "required": false
     },
     {
       "id": "q9",
       "type": "text",
-      "title": "Concernant les autres professionnels en dehors du dispositif médico-éducatif et intervenants dans l’accompagnement de votre enfant, avez-vous des souhaits particuliers ?",
-      "placeholder": "Tu peux écrire ici…",
+      "title": {
+        "fr": "Concernant les autres professionnels en dehors du dispositif médico-éducatif et intervenants dans l’accompagnement de votre enfant, avez-vous des souhaits particuliers ?",
+        "en": "Regarding other professionals outside the medico-educational service involved in supporting your child, do you have any particular wishes?",
+        "ar": "فيما يتعلق بالمهنيين الآخرين خارج الجهاز الطبي-التربوي والمتدخلين في مرافقة طفلكم، هل لديكم رغبات خاصة؟"
+      },
+      "placeholder": {
+        "fr": "Tu peux écrire ici…",
+        "en": "You can write here…",
+        "ar": "يمكنك الكتابة هنا…"
+      },
       "required": false
     }
   ]

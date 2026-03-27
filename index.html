@@ -12,7 +12,7 @@
 </head>
 
 <body>
-  <a class="skip" href="#main">Aller au contenu</a>
+  <a class="skip" href="#main" id="skipLink">Aller au contenu</a>
 
   <header class="top">
     <div class="top-inner">
@@ -21,14 +21,32 @@
           <img src="./logo-adapei.png" alt="Adapei 49" />
         </div>
         <div>
-          <h1>Recueil des attentes</h1>
-          <p class="sub">Questionnaire accessible – FALC & audio</p>
+          <h1 id="siteTitle">Recueil des attentes</h1>
+          <p class="sub" id="siteSub">Questionnaire accessible – FALC & audio</p>
         </div>
       </div>
 
-      <span class="badge">
-        👤 Éducateur : <strong id="educBadge">à choisir</strong>
-      </span>
+      <div class="top-actions">
+        <div class="lang-switcher" id="langSwitcher" aria-label="Choix de la langue">
+          <button type="button" class="lang-btn is-active" data-lang="fr" aria-pressed="true" title="Français">
+            <span aria-hidden="true">🇫🇷</span>
+            <span class="lang-label">FR</span>
+          </button>
+          <button type="button" class="lang-btn" data-lang="en" aria-pressed="false" title="English">
+            <span aria-hidden="true">🇬🇧</span>
+            <span class="lang-label">EN</span>
+          </button>
+          <button type="button" class="lang-btn" data-lang="ar" aria-pressed="false" title="العربية">
+            <span aria-hidden="true">🇲🇦</span>
+            <span class="lang-label">AR</span>
+          </button>
+        </div>
+
+        <span class="badge">
+          <span id="educBadgeLabel">👤 Éducateur :</span>
+          <strong id="educBadge">à choisir</strong>
+        </span>
+      </div>
     </div>
   </header>
 
@@ -37,7 +55,7 @@
 
       <!-- STEP 1 : Pôles -->
       <div id="poleStep">
-        <h2>Choisir le pôle</h2>
+        <h2 id="poleStepTitle">Choisir le pôle</h2>
 
         <!-- Select compat (caché) -->
         <select id="groupSelect" disabled style="display:none;">
@@ -52,7 +70,7 @@
 
       <!-- STEP 2 : Éducateurs -->
       <div id="educStep" style="display:none;">
-        <h2>Choisir le professionnel</h2>
+        <h2 id="educStepTitle">Choisir le professionnel</h2>
 
         <div id="educGrid" class="educ-grid" aria-live="polite"></div>
 
@@ -72,10 +90,10 @@
     </section>
   </main>
 
-  <!-- pdf-lib en LOCAL (indispensable pour que "Télécharger PDF" marche sans réseau) -->
+  <!-- pdf-lib en LOCAL -->
   <script defer src="./src/libs/pdf-lib.min.js"></script>
 
-  <!-- html2canvas en LOCAL (indispensable pour PDF identique au récap) -->
+  <!-- html2canvas en LOCAL -->
   <script defer src="./src/libs/html2canvas.min.js"></script>
 
   <!-- App -->

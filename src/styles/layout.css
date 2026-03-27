@@ -14,13 +14,20 @@
   gap:16px;
 }
 
+.top-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
 .brand{
   display:flex;
   align-items:center;
   gap:12px;
 }
 
-/* Logo sur gélule blanche */
 .logo{
   display: inline-flex;
   align-items: center;
@@ -78,9 +85,144 @@
   border-radius:var(--radius);
   padding:var(--pad);
   box-shadow:var(--shadow);
+  position: relative;
+  overflow: hidden;
+  padding-top: 22px;
+}
+
+.card::before{
+  content:"";
+  position:absolute;
+  left:-40%;
+  top:-140px;
+  width: 180%;
+  height: 220px;
+  background:
+    radial-gradient(700px 120px at 18% 60%, rgba(118,184,42,.22), transparent 62%),
+    radial-gradient(500px 120px at 70% 30%, rgba(118,184,42,.14), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,0));
+  transform: rotate(-2deg);
+  pointer-events:none;
+  z-index:0;
+}
+
+.card > *{
+  position: relative;
+  z-index: 1;
+}
+
+.card::after{
+  content: none !important;
+}
+
+.navRow{
+  display:flex;
+  gap:10px;
+  justify-content:space-between;
+  margin-top:14px;
+  flex-wrap:wrap;
+}
+
+.navRow3{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.centerActions{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 110px;
+}
+
+.qHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.qPictoWrap{
+  margin: 10px 0 6px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+}
+
+.qPicto{
+  height: 70px;
+  width: auto;
+  object-fit: contain;
+  transform: translateZ(0);
+}
+
+.progressWrap{
+  margin: 0 0 14px;
+  padding-top: 6px;
+}
+
+.progressTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+
+.progressTrack{
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(16,24,40,.06);
+  border: 1px solid rgba(16,24,40,.08);
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(16,24,40,.04) inset;
+}
+
+.progressFill{
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 10px 20px rgba(118,184,42,.20);
+  transition: width .25s ease;
 }
 
 .help{
   color:var(--muted);
   font-size:.95rem;
+}
+
+@media (max-width: 780px){
+  .top-inner{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .top-actions{
+    justify-content:space-between;
+  }
+}
+
+@media (max-width: 560px){
+  .navRow3{
+    align-items:stretch;
+  }
+
+  .centerActions{
+    min-width:unset;
+  }
+
+  .top-actions{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .lang-switcher{
+    justify-content:center;
+  }
 }
