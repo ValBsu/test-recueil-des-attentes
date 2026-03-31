@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - Professionnels</title>
+
+  <style>
+    :root {
+      --bg-1: #f5f8ff;
+      --bg-2: #edf3ff;
+      --card: rgba(255, 255, 255, 0.72);
+      --card-strong: rgba(255, 255, 255, 0.9);
+      --text: #17324d;
+      --muted: #5e7186;
+      --line: rgba(23, 50, 77, 0.10);
+      --shadow: 0 12px 40px rgba(39, 76, 119, 0.12);
+      --shadow-soft: 0 8px 24px rgba(39, 76, 119, 0.08);
+      --accent: #5b8def;
+      --accent-2: #7aa6ff;
+      --danger: #e0565b;
+      --success: #36a269;
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-pill: 999px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, #ffffff 0%, #f3f7ff 35%, #edf3ff 100%);
+    }
+
+    body {
+      padding: 24px 16px 40px;
+    }
+
+    .page {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 22px;
+      padding: 16px 18px;
+      border-radius: var(--radius-xl);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .admin-badge {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      background: linear-gradient(135deg, rgba(122,166,255,0.25), rgba(91,141,239,0.12));
+      border: 1px solid rgba(91,141,239,0.18);
+      box-shadow: var(--shadow-soft);
+      flex-shrink: 0;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: clamp(1.4rem, 2vw, 2rem);
+      line-height: 1.1;
+    }
+
+    .topbar p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .glass-btn {
+      appearance: none;
+      border: none;
+      border-radius: var(--radius-pill);
+      padding: 12px 18px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--text);
+      background: var(--card-strong);
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255,255,255,0.8);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+    }
+
+    .glass-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 26px rgba(39, 76, 119, 0.12);
+    }
+
+    .glass-btn:active {
+      transform: scale(0.98);
+    }
+
+    .glass-btn.primary {
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      color: white;
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+
+    .glass-btn.danger {
+      background: linear-gradient(135deg, #ef7a7e, var(--danger));
+      color: white;
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+
+    .panel {
+      padding: 18px;
+      border-radius: var(--radius-xl);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .panel-subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    #list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .card {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .row + .row {
+      margin-top: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 180px;
+      flex: 1 1 180px;
+    }
+
+    .field.small {
+      min-width: 110px;
+      flex: 0 1 130px;
+    }
+
+    .field-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+      padding-left: 4px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input:not([type="checkbox"]) {
+      width: 100%;
+      min-height: 46px;
+      padding: 12px 14px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(23, 50, 77, 0.10);
+      background: rgba(255,255,255,0.92);
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    input:focus {
+      border-color: rgba(91,141,239,0.45);
+      box-shadow: 0 0 0 4px rgba(91,141,239,0.10);
+    }
+
+    .check-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 46px;
+      padding: 10px 14px;
+      border-radius: var(--radius-pill);
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(23, 50, 77, 0.10);
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--success);
+      cursor: pointer;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      width: 100%;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.6);
+      border: 1px dashed rgba(23, 50, 77, 0.12);
+    }
+
+    .footer {
+      display: flex;
+      justify-content: center;
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .back-link {
+      text-decoration: none;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 16px 12px 28px;
+      }
+
+      .topbar {
+        padding: 14px;
+        align-items: flex-start;
+      }
+
+      .top-actions {
+        width: 100%;
+        justify-content: stretch;
+      }
+
+      .top-actions .glass-btn,
+      .top-actions .back-link {
+        width: 100%;
+      }
+
+      .top-actions .glass-btn {
+        width: 100%;
+      }
+
+      .field,
+      .field.small {
+        min-width: 100%;
+        flex-basis: 100%;
+      }
+
+      .actions {
+        justify-content: stretch;
+      }
+
+      .actions .glass-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="admin-badge" aria-hidden="true">⚙️</div>
+        <div>
+          <h1>Admin – Professionnels</h1>
+          <p>Gérer les noms, rôles, pôles, emails et états actifs.</p>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button id="addBtn" class="glass-btn primary" type="button">➕ Ajouter un professionnel</button>
+        <a href="./index.html" class="back-link">
+          <button class="glass-btn" type="button">← Retour au questionnaire</button>
+        </a>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">Liste des professionnels</h2>
+          <p class="panel-subtitle">Modification rapide en mode admin.</p>
+        </div>
+      </div>
+
+      <div id="list">
+        <div class="empty">Chargement des professionnels…</div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Interface admin interne</span>
+    </footer>
+  </main>
+
+  <script src="./src/js/admin.js"></script>
+</body>
+</html>

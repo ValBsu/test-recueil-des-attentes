@@ -148,15 +148,8 @@ function ensureQuizBox() {
 
     <div class="qHeader">
       <h2 id="qTitle"></h2>
-      <div id="qPictoWrap" class="qPictoWrap" style="display:none;"></div>
-    </div>
 
-    <div id="choices" class="choices"></div>
-
-    <div class="navRow navRow3">
-      <button class="btn secondary" id="prevBtn" type="button">${escapeHtml(t("previous"))}</button>
-
-      <div class="centerActions" aria-label="Actions audio et dictée">
+      <div class="qInlineActions" aria-label="Actions audio et dictée">
         <button class="iconBtn" id="speakBtn" type="button" title="${escapeHtml(
           t("speak_question")
         )}">🔊</button>
@@ -165,6 +158,14 @@ function ensureQuizBox() {
         )}">🎤</button>
       </div>
 
+      <div id="qPictoWrap" class="qPictoWrap" style="display:none;"></div>
+    </div>
+
+    <div id="choices" class="choices"></div>
+
+    <div class="navRow navRow3">
+      <button class="btn secondary" id="prevBtn" type="button">${escapeHtml(t("previous"))}</button>
+      <div class="centerActions"></div>
       <button class="btn" id="nextBtn" type="button">${escapeHtml(t("next"))}</button>
     </div>
 

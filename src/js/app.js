@@ -982,3 +982,31 @@ async function init() {
 init().catch((error) => {
   console.error("Erreur init app :", error);
 });
+const ADMIN_LOGIN = "ValBsu";      // ← change
+const ADMIN_PASSWORD = "admin123"; // ← change
+
+const adminBtn = document.getElementById("adminAccessBtn");
+
+if (adminBtn) {
+  adminBtn.addEventListener("click", () => {
+    const isAuth = sessionStorage.getItem("adminAuth");
+
+    if (isAuth === "true") {
+      window.location.href = "./admin.html";
+      return;
+    }
+
+    const login = prompt("Identifiant admin :");
+    if (!login) return;
+
+    const password = prompt("Mot de passe :");
+    if (!password) return;
+
+    if (login === ADMIN_LOGIN && password === ADMIN_PASSWORD) {
+      sessionStorage.setItem("adminAuth", "true");
+      window.location.href = "./admin.html";
+    } else {
+      alert("Identifiant ou mot de passe incorrect");
+    }
+  });
+}

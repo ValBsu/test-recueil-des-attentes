@@ -20,32 +20,35 @@
         <div class="logo">
           <img src="./logo-adapei.png" alt="Adapei 49" />
         </div>
-        <div>
+
+        <div class="brand-copy">
           <h1 id="siteTitle">Recueil des attentes</h1>
           <p class="sub" id="siteSub">Questionnaire accessible – FALC & audio</p>
         </div>
       </div>
 
       <div class="top-actions">
+        <span class="badge">
+          <span id="educBadgeLabel">👤 Éducateur :</span>
+          <strong id="educBadge">à choisir</strong>
+        </span>
+
         <div class="lang-switcher" id="langSwitcher" aria-label="Choix de la langue">
           <button type="button" class="lang-btn is-active" data-lang="fr" aria-pressed="true" title="Français">
             <span aria-hidden="true">🇫🇷</span>
             <span class="lang-label">FR</span>
           </button>
+
           <button type="button" class="lang-btn" data-lang="en" aria-pressed="false" title="English">
             <span aria-hidden="true">🇬🇧</span>
             <span class="lang-label">EN</span>
           </button>
+
           <button type="button" class="lang-btn" data-lang="ar" aria-pressed="false" title="العربية">
             <span aria-hidden="true">🇲🇦</span>
             <span class="lang-label">AR</span>
           </button>
         </div>
-
-        <span class="badge">
-          <span id="educBadgeLabel">👤 Éducateur :</span>
-          <strong id="educBadge">à choisir</strong>
-        </span>
       </div>
     </div>
   </header>
@@ -57,7 +60,6 @@
       <div id="poleStep">
         <h2 id="poleStepTitle">Choisir le pôle</h2>
 
-        <!-- Select compat (caché) -->
         <select id="groupSelect" disabled style="display:none;">
           <option value="">— Choisir un groupe —</option>
         </select>
@@ -74,7 +76,6 @@
 
         <div id="educGrid" class="educ-grid" aria-live="polite"></div>
 
-        <!-- Select compat (caché) -->
         <select id="educSelect" style="display:none;">
           <option value="">— Sélectionner —</option>
         </select>
@@ -89,6 +90,11 @@
 
     </section>
   </main>
+
+  <footer class="footer">
+  <span>© 2026 Adapei 49 – Tous droits réservés</span>
+    <button id="adminAccessBtn" class="admin-btn">⚙️ Admin</button>
+  </footer>
 
   <!-- Libs locales -->
   <script defer src="./src/libs/html2canvas.min.js"></script>
