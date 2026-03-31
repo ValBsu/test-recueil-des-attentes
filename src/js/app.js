@@ -277,46 +277,49 @@ function t(key) {
 /* =========================
    Données
    ========================= */
-const EDUCATORS = [
-  { name: "Alexis Plessis", role: "Éducateur spécialisé", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "alexis-plessis" },
-  { name: "Morgane Deshaies", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "morgane-deshaies" },
-  { name: "Camille Rouillé", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "camille-rouille" },
-  { name: "Marina Trottier", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "marina-trottier" },
-  { name: "Lucile Charrier", role: "Éducatrice spécialisée", group: "Pôle accueil", photo: DEFAULT_EDUC_PHOTO, id: "lucile-charrier" },
+let EDUCATORS = [];
+let GROUPS = [];
 
-  { name: "Pauline Martin", role: "Éducatrice spécialisée", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "pauline-martin" },
-  { name: "Marine Toureau", role: "Monitrice éducatrice", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "marine-toureau" },
-  { name: "Wilfried Tijou", role: "Éducateur technique", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "wilfried-tijou" },
-  { name: "Maud Février", role: "Monitrice éducatrice", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "maud-fevrier" },
-  { name: "Nadège Rétif", role: "Éducatrice spécialisée", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "nadege-retif" },
-  { name: "Nicolas Marmin", role: "Éducateur spécialisé", group: "Pôle projet", photo: DEFAULT_EDUC_PHOTO, id: "nicolas-marmin" },
+const EDUCATORS_JSON_PATH = "./src/data/educators.json";
 
-  { name: "Karen Goujon", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "karen-goujon" },
-  { name: "Damien Chautard", role: "Éducateur technique", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "damien-chautard" },
-  { name: "Céline Mottais", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "celine-mottais" },
-  { name: "Josélita Martot", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "joselita-martot" },
-  { name: "Marie Boré", role: "Éducateur spécialisé", group: "Pôle sortie", photo: DEFAULT_EDUC_PHOTO, id: "marie-bore" },
+function buildGroupsFromEducators(list) {
+  return Array.from(
+    new Set(
+      list
+        .filter((e) => e && e.isActive !== false && e.group)
+        .map((e) => e.group)
+    )
+  );
+}
 
-  { name: "Pascal Rochard", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "pascal-rochard" },
-  { name: "Julien Fabre", role: "Éducateur spécialisé", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "julien-fabre" },
-  { name: "Chloé Galand", role: "Éducatrice spécialisée", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "chloe-galand" },
-  { name: "Audrey Morille", role: "Éducatrice spécialisée", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "audrey-morille" },
-  { name: "Claire Constanty", role: "Monitrice éducatrice", group: "Unité transversale", photo: DEFAULT_EDUC_PHOTO, id: "claire-constanty" },
+async function loadEducators() {
+  try {
+    const res = await fetch(EDUCATORS_JSON_PATH, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Fetch failed: ${EDUCATORS_JSON_PATH}`);
 
-  { name: "Matthieu Rivron", role: "Éducateur spécialisé", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "matthieu-rivron" },
-  { name: "Noémie Rat", role: "Éducatrice spécialisée", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "noemie-rat" },
-  { name: "Juliette Rousteau", role: "Monitrice éducatrice", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "juliette-rousteau" },
-  { name: "Justine Meruz", role: "Monitrice éducatrice", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "justine-meruz" },
-  { name: "Valentin Bésiau", role: "Moniteur éducateur", group: "Unité spécifique", photo: DEFAULT_EDUC_PHOTO, id: "valentin-besiau" },
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error("educators.json n'est pas un tableau");
 
-  { name: "Marie Caillaud", role: "Éducatrice spécialisée", group: "SESSAD", photo: DEFAULT_EDUC_PHOTO, id: "marie-caillaud" },
-  { name: "Lucie Chaillou", role: "Conseillère CESF", group: "SESSAD", photo: DEFAULT_EDUC_PHOTO, id: "lucie-chaillou" },
-  { name: "Claire Ilias-Pillet", role: "Éducatrice spécialisée", group: "SESSAD", photo: DEFAULT_EDUC_PHOTO, id: "claire-ilias-pillet" },
+    EDUCATORS = data
+      .map((e, index) => ({
+        id: e?.id || normalizeId(e?.name || `educator-${index + 1}`),
+        name: e?.name || "",
+        role: e?.role || "",
+        group: e?.group || "",
+        email: e?.email || "",
+        photo: e?.photo || DEFAULT_EDUC_PHOTO,
+        isActive: e?.isActive !== false,
+        order: Number.isFinite(Number(e?.order)) ? Number(e.order) : index + 1
+      }))
+      .sort((a, b) => a.order - b.order);
 
-  { name: "Laura Roger", role: "Conseillère CESF", group: "Ulis", photo: DEFAULT_EDUC_PHOTO, id: "laura-roger" }
-];
-
-const GROUPS = Array.from(new Set(EDUCATORS.map((e) => e.group)));
+    GROUPS = buildGroupsFromEducators(EDUCATORS);
+  } catch (error) {
+    console.error("Erreur chargement educators.json :", error);
+    EDUCATORS = [];
+    GROUPS = [];
+  }
+}
 
 const QUESTIONNAIRES = [
   {
@@ -699,7 +702,10 @@ function renderEducatorsForGroup(group) {
   if (!educGrid) return;
 
   educGrid.innerHTML = "";
-  const list = EDUCATORS.filter((e) => e.group === group);
+
+  const list = EDUCATORS
+    .filter((e) => e.group === group && e.isActive !== false)
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
 
   if (!list.length) {
     if (educOut) educOut.textContent = t("no_professional_found");
@@ -711,7 +717,7 @@ function renderEducatorsForGroup(group) {
     card.type = "button";
     card.className = "educ-card";
     card.innerHTML = `
-      <img class="educ-photo" src="${e.photo}" alt="" loading="lazy" />
+      <img class="educ-photo" src="${escapeHtml(e.photo || DEFAULT_EDUC_PHOTO)}" alt="" loading="lazy" />
       <div>
         <div class="educ-name">${escapeHtml(e.name)}</div>
         <div class="educ-role">${escapeHtml(e.role)}</div>
@@ -744,7 +750,6 @@ function renderEducatorsForGroup(group) {
     educGrid.appendChild(card);
   });
 }
-
 function highlightSelectedPoleCard(name) {
   if (!groupGrid) return;
   groupGrid.querySelectorAll(".group-card").forEach((el) => {
@@ -956,12 +961,11 @@ function bindLanguageButtons() {
   if (out) out.textContent = t("click_pole_to_continue");
 });
 
-/* =========================
-   Init
-   ========================= */
-function init() {
+async function init() {
   applyLanguageToDocument();
   bindLanguageButtons();
+
+  await loadEducators();
 
   if (select) select.addEventListener("change", updateBadge);
   updateBadge();
@@ -969,9 +973,12 @@ function init() {
   populateGroupsSelectCompat();
   renderGroupCards(false);
   showPoleStep();
+
   if (out) out.textContent = t("choose_questionnaire_first");
+
   initModeChoice();
   refreshStaticTexts();
 }
-
-init();
+init().catch((error) => {
+  console.error("Erreur init app :", error);
+});

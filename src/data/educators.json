@@ -1,0 +1,302 @@
+[
+  {
+    "id": "alexis-plessis",
+    "name": "Alexis Plessis",
+    "role": "Éducateur spécialisé",
+    "group": "Pôle accueil",
+    "email": "aplessis@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 1
+  },
+  {
+    "id": "morgane-deshaies",
+    "name": "Morgane Deshaies",
+    "role": "Éducatrice spécialisée",
+    "group": "Pôle accueil",
+    "email": "mdeshaies@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 2
+  },
+  {
+    "id": "camille-rouille",
+    "name": "Camille Rouillé",
+    "role": "Éducatrice spécialisée",
+    "group": "Pôle accueil",
+    "email": "crouille@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 3
+  },
+  {
+    "id": "marina-trottier",
+    "name": "Marina Trottier",
+    "role": "Éducatrice spécialisée",
+    "group": "Pôle accueil",
+    "email": "mtrottier@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 4
+  },
+  {
+    "id": "lucile-charrier",
+    "name": "Lucile Charrier",
+    "role": "Éducatrice spécialisée",
+    "group": "Pôle accueil",
+    "email": "lcharrier@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 5
+  },
+  {
+    "id": "pauline-martin",
+    "name": "Pauline Martin",
+    "role": "Éducatrice spécialisée",
+    "group": "Pôle projet",
+    "email": "pmartin@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 6
+  },
+  {
+    "id": "marine-toureau",
+    "name": "Marine Toureau",
+    "role": "Monitrice éducatrice",
+    "group": "Pôle projet",
+    "email": "mtoureau@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 7
+  },
+  {
+    "id": "wilfried-tijou",
+    "name": "Wilfried Tijou",
+    "role": "Éducateur technique",
+    "group": "Pôle projet",
+    "email": "wtijou@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 8
+  },
+  {
+    "id": "maud-fevrier",
+    "name": "Maud Février",
+    "role": "Monitrice éducatrice",
+    "group": "Pôle projet",
+    "email": "mfevrier@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 9
+  },
+  {
+    "id": "nadege-retif",
+    "name": "Nadège Rétif",
+    "role": "Éducatrice spécialisée",
+    "group": "Pôle projet",
+    "email": "nretif@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 10
+  },
+  {
+    "id": "nicolas-marmin",
+    "name": "Nicolas Marmin",
+    "role": "Éducateur spécialisé",
+    "group": "Pôle projet",
+    "email": "nmarmin@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 11
+  },
+  {
+    "id": "karen-goujon",
+    "name": "Karen Goujon",
+    "role": "Éducateur spécialisé",
+    "group": "Pôle sortie",
+    "email": "kgoujon@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 12
+  },
+  {
+    "id": "damien-chautard",
+    "name": "Damien Chautard",
+    "role": "Éducateur technique",
+    "group": "Pôle sortie",
+    "email": "dchautard@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 13
+  },
+  {
+    "id": "celine-mottais",
+    "name": "Céline Mottais",
+    "role": "Éducateur spécialisé",
+    "group": "Pôle sortie",
+    "email": "cmottais@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 14
+  },
+  {
+    "id": "joselita-martot",
+    "name": "Josélita Martot",
+    "role": "Éducateur spécialisé",
+    "group": "Pôle sortie",
+    "email": "jmartot@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 15
+  },
+  {
+    "id": "marie-bore",
+    "name": "Marie Boré",
+    "role": "Éducateur spécialisé",
+    "group": "Pôle sortie",
+    "email": "mbore@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 16
+  },
+  {
+    "id": "pascal-rochard",
+    "name": "Pascal Rochard",
+    "role": "Éducateur spécialisé",
+    "group": "Unité transversale",
+    "email": "prochard@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 17
+  },
+  {
+    "id": "julien-fabre",
+    "name": "Julien Fabre",
+    "role": "Éducateur spécialisé",
+    "group": "Unité transversale",
+    "email": "jfabre@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 18
+  },
+  {
+    "id": "chloe-galand",
+    "name": "Chloé Galand",
+    "role": "Éducatrice spécialisée",
+    "group": "Unité transversale",
+    "email": "cgaland@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 19
+  },
+  {
+    "id": "audrey-morille",
+    "name": "Audrey Morille",
+    "role": "Éducatrice spécialisée",
+    "group": "Unité transversale",
+    "email": "amorille@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 20
+  },
+  {
+    "id": "claire-constanty",
+    "name": "Claire Constanty",
+    "role": "Monitrice éducatrice",
+    "group": "Unité transversale",
+    "email": "cconstanty@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 21
+  },
+  {
+    "id": "matthieu-rivron",
+    "name": "Matthieu Rivron",
+    "role": "Éducateur spécialisé",
+    "group": "Unité spécifique",
+    "email": "mrivron@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 22
+  },
+  {
+    "id": "noemie-rat",
+    "name": "Noémie Rat",
+    "role": "Éducatrice spécialisée",
+    "group": "Unité spécifique",
+    "email": "nrat@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 23
+  },
+  {
+    "id": "juliette-rousteau",
+    "name": "Juliette Rousteau",
+    "role": "Monitrice éducatrice",
+    "group": "Unité spécifique",
+    "email": "jrousteau@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 24
+  },
+  {
+    "id": "justine-meruz",
+    "name": "Justine Meruz",
+    "role": "Monitrice éducatrice",
+    "group": "Unité spécifique",
+    "email": "jmeruz@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 25
+  },
+  {
+    "id": "valentin-besiau",
+    "name": "Valentin Bésiau",
+    "role": "Moniteur éducateur",
+    "group": "Unité spécifique",
+    "email": "vbesiau@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 26
+  },
+  {
+    "id": "marie-caillaud",
+    "name": "Marie Caillaud",
+    "role": "Éducatrice spécialisée",
+    "group": "SESSAD",
+    "email": "mcaillaud@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 27
+  },
+  {
+    "id": "lucie-chaillou",
+    "name": "Lucie Chaillou",
+    "role": "Conseillère CESF",
+    "group": "SESSAD",
+    "email": "lchaillou@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 28
+  },
+  {
+    "id": "claire-ilias-pillet",
+    "name": "Claire Ilias-Pillet",
+    "role": "Éducatrice spécialisée",
+    "group": "SESSAD",
+    "email": "ciliaspillet@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 29
+  },
+  {
+    "id": "laura-roger",
+    "name": "Laura Roger",
+    "role": "Conseillère CESF",
+    "group": "Ulis",
+    "email": "lroger@adapei49.asso.fr",
+    "photo": "/src/assets/avatar.png",
+    "isActive": true,
+    "order": 30
+  }
+]
