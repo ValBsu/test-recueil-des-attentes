@@ -185,31 +185,43 @@
 
 .qHeader{
   display:flex;
-  flex-direction:column;
-  align-items:flex-start;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:14px;
+  width:100%;
+}
+
+.qLeft{
+  display:flex;
+  align-items:center;
   gap:10px;
-  margin-bottom: 8px;
+  min-width:0;
+  flex:1 1 auto;
 }
 
 .qHeader h2{
-  margin: 0;
+  margin:0;
+  flex:0 1 auto;
 }
 
 .qInlineActions{
   display:flex;
   align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
+  gap:8px;
+  flex:0 0 auto;
 }
 
 .qPictoWrap{
-  margin: 6px 0 10px;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding-top: 2px;
-  width: 100%;
+  margin:0;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  flex-wrap:nowrap;
+  padding-top:0;
+  width:auto;
+  flex:0 0 auto;
 }
 
 .qPicto{
@@ -324,6 +336,22 @@
     justify-content: center;
     min-width: unset;
   }
+
+  .qHeader{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .qLeft{
+    width:100%;
+    flex-wrap:wrap;
+  }
+
+  .qPictoWrap{
+    width:100%;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
 }
 
 @media (max-width: 560px){
@@ -356,6 +384,6 @@
   }
 
   .qInlineActions{
-    width: 100%;
+    width:auto;
   }
 }

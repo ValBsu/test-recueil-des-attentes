@@ -22,7 +22,7 @@ function getAnswerLabel(q, val) {
       const min = Number(q.min);
       const max = Number(q.max);
       const n = Number(val);
-      const tNum = (n - min) / (max - min);
+      const tNum = max === min ? 0 : (n - min) / (max - min);
       const idx = Math.max(
         0,
         Math.min(labels.length - 1, Math.round(tNum * (labels.length - 1)))
@@ -60,14 +60,19 @@ function getAnswerPictos(q, val) {
   if (type === "text" || type === "scale") return [];
 
   const pick = (choiceVal) => (q.choices || []).find((c) => c.value === choiceVal);
+
   if (isMultiple) {
     const arr = Array.isArray(val) ? val : [];
     return arr.map((v) => getChoicePictoFile(pick(v))).filter(Boolean);
   }
+
   return [getChoicePictoFile(pick(val))].filter(Boolean);
 }
 
-/* PDF */
+/* =========================
+   PDF
+   ========================= */
+
 function assertPdfLib() {
   const lib = window.PDFLib;
   if (!lib || !lib.PDFDocument) {
@@ -113,6 +118,7 @@ function waitImagesLoaded(container) {
           img.addEventListener("error", resolve, { once: true });
         })
     );
+
   return Promise.all(pending);
 }
 
@@ -140,7 +146,11 @@ function canvasToPngBytes(canvas) {
   const base64 = dataUrl.split(",")[1];
   const bin = atob(base64);
   const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+  for (let i = 0; i < bin.length; i++) {
+    bytes[i] = bin.charCodeAt(i);
+  }
+
   return bytes;
 }
 
@@ -148,8 +158,10 @@ function sliceCanvas(canvas, sliceY, sliceH) {
   const out = document.createElement("canvas");
   out.width = canvas.width;
   out.height = sliceH;
+
   const ctx = out.getContext("2d");
   ctx.drawImage(canvas, 0, sliceY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
   return out;
 }
 
@@ -198,12 +210,37 @@ async function buildPdfFromRecapElement(el) {
   return await pdfDoc.save();
 }
 
-async function downloadRecapAsPdf(filename = "recap.pdf") {
+async function getRecapPdfBytes() {
   const recapEl = $id("pdfArea");
   if (!recapEl) throw new Error("Zone récap introuvable (#pdfArea).");
+  return await buildPdfFromRecapElement(recapEl);
+}
 
-  const pdfBytes = await buildPdfFromRecapElement(recapEl);
+async function downloadRecapAsPdf(filename = "recap.pdf") {
+  const pdfBytes = await getRecapPdfBytes();
   downloadBytesAsPdf(pdfBytes, filename);
+}
+
+function uint8ToBase64(bytes) {
+  let binary = "";
+  const chunkSize = 0x8000;
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+
+  return btoa(binary);
+}
+
+async function generateRecapPdfPayload(filename = "recap.pdf") {
+  const pdfBytes = await getRecapPdfBytes();
+  const pdfBase64 = uint8ToBase64(pdfBytes);
+
+  return {
+    filename,
+    base64: pdfBase64
+  };
 }
 
 function renderSummary() {
@@ -213,7 +250,6 @@ function renderSummary() {
 
   const educatorId = select?.value || "";
   const educLabel = badge?.textContent || "";
-
   const qs = safeQuestionsArray(questionnaire);
 
   const summary = qs.map((q) => {
@@ -329,9 +365,17 @@ function renderSummary() {
 
   $id("sendBtn")?.addEventListener("click", async () => {
     const hint = $id("sendHint");
-    if (hint) hint.textContent = t("sending");
+    if (hint) hint.textContent = t("generating_pdf");
 
     try {
+      const safeEduc = normalizeId(educLabel || "educateur") || "educateur";
+      const stamp = new Date().toISOString().slice(0, 10);
+      const filename = `recap_${safeEduc}_${stamp}.pdf`;
+
+      const pdfPayload = await generateRecapPdfPayload(filename);
+
+      if (hint) hint.textContent = t("sending");
+
       const res = await fetch("/.netlify/functions/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -345,12 +389,15 @@ function renderSummary() {
             otherAnswer: x.otherAnswer || "",
             combinedAnswer: x.answer
           })),
-          durationSeconds: Math.round(durationMs / 1000)
+          durationSeconds: Math.round(durationMs / 1000),
+          pdfBase64: pdfPayload.base64,
+          pdfFilename: pdfPayload.filename
         })
       });
 
       const txt = await res.text();
       if (!res.ok) throw new Error(txt || "Erreur d’envoi");
+
       if (hint) hint.textContent = t("sent");
     } catch (err) {
       if (hint) hint.textContent = t("send_error");

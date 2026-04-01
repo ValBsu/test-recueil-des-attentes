@@ -7,77 +7,99 @@ let listening = false;
 let interimBaseValue = "";
 let activeDictationField = null;
 
-/* Hover audio */
-let suppressHoverUntil = 0;
-
 /* Audio */
 let lastSpokenText = "";
-let speakTimer = null;
+let autoSpeakTimer = null;
 
 function getSpeechLang() {
   return SPEECH_LANG_MAP[currentLang] || "fr-FR";
 }
 
-function speakHover(text) {
-  if (!text) return;
+function cancelSpeech() {
   if (!("speechSynthesis" in window)) return;
-  if (Date.now() < suppressHoverUntil) return;
-
-  window.clearTimeout(speakTimer);
-  speakTimer = window.setTimeout(() => {
-    if (Date.now() < suppressHoverUntil) return;
-    if (text === lastSpokenText) return;
-    lastSpokenText = text;
-
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = getSpeechLang();
-    u.rate = 0.95;
-    u.pitch = 0.9;
-    window.speechSynthesis.speak(u);
-  }, 120);
+  window.clearTimeout(autoSpeakTimer);
+  window.speechSynthesis.cancel();
 }
 
-function speakText(text) {
+function speakText(text, options = {}) {
   if (!text) return;
   if (!("speechSynthesis" in window)) {
     alert(t("audio_unavailable"));
     return;
   }
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = getSpeechLang();
-  u.rate = 0.95;
-  u.pitch = 0.9;
-  window.speechSynthesis.speak(u);
+
+  const {
+    force = true,
+    remember = true,
+    delay = 0
+  } = options;
+
+  window.clearTimeout(autoSpeakTimer);
+
+  const run = () => {
+    if (!force && text === lastSpokenText) return;
+
+    window.speechSynthesis.cancel();
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = getSpeechLang();
+    u.rate = 0.95;
+    u.pitch = 0.9;
+
+    if (remember) lastSpokenText = text;
+    window.speechSynthesis.speak(u);
+  };
+
+  if (delay > 0) {
+    autoSpeakTimer = window.setTimeout(run, delay);
+  } else {
+    run();
+  }
+}
+
+/* Compatibilité ancien code :
+   on garde speakHover, mais il ne fait plus de lecture au survol.
+   Comme ça, si ton app l'appelle encore ailleurs, ça ne casse rien.
+*/
+function speakHover() {
+  return;
+}
+
+/* Lecture auto de la question courante */
+function speakCurrentQuestionAuto() {
+  const q = typeof getCurrentQuestion === "function" ? getCurrentQuestion() : null;
+  if (!q) return;
+
+  let text = "";
+
+  if (typeof getQuestionTitle === "function") {
+    text = getQuestionTitle(q);
+  } else if (typeof getLocalizedValue === "function") {
+    text = getLocalizedValue(q?.title);
+  } else {
+    text = q?.title || "";
+  }
+
+  if (!text) return;
+
+  speakText(text, {
+    force: true,
+    remember: true,
+    delay: 250
+  });
 }
 
 function bindChoiceSpeakInteractions(target, q, text) {
   if (!target || !text) return;
-  if (isFamilyQuestionnaire()) return;
-
-  target.addEventListener("mouseenter", () => {
-    if (questionHasSelectedChoice(q)) return;
-    speakHover(text);
-  });
-
-  target.addEventListener(
-    "focus",
-    () => {
-      speakHover(text);
-    },
-    true
-  );
 
   target.addEventListener("click", () => {
-    suppressHoverUntil = Date.now() + 500;
-    speakText(text);
+    speakText(text, { force: true, remember: true });
   });
 
   target.addEventListener(
     "touchstart",
     () => {
-      speakText(text);
+      speakText(text, { force: true, remember: true });
     },
     { passive: true }
   );
@@ -208,11 +230,12 @@ function toggleDictation() {
 
 function resetSpeechState() {
   activeDictationField = null;
-  suppressHoverUntil = 0;
+  cancelSpeech();
 }
 
 window.speakHover = speakHover;
 window.speakText = speakText;
+window.speakCurrentQuestionAuto = speakCurrentQuestionAuto;
 window.bindChoiceSpeakInteractions = bindChoiceSpeakInteractions;
 window.getVisibleTextInputs = getVisibleTextInputs;
 window.getActiveTextArea = getActiveTextArea;
@@ -220,6 +243,8 @@ window.setMicUI = setMicUI;
 window.toggleDictation = toggleDictation;
 window.resetSpeechState = resetSpeechState;
 window.getSpeechLang = getSpeechLang;
+window.cancelSpeech = cancelSpeech;
+
 window.__speechState = {
   get recog() {
     return recog;
@@ -232,11 +257,5 @@ window.__speechState = {
   },
   set activeDictationField(val) {
     activeDictationField = val;
-  },
-  get suppressHoverUntil() {
-    return suppressHoverUntil;
-  },
-  set suppressHoverUntil(val) {
-    suppressHoverUntil = val;
   }
 };

@@ -147,15 +147,17 @@ function ensureQuizBox() {
     </div>
 
     <div class="qHeader">
-      <h2 id="qTitle"></h2>
+      <div class="qLeft">
+        <h2 id="qTitle"></h2>
 
-      <div class="qInlineActions" aria-label="Actions audio et dictée">
-        <button class="iconBtn" id="speakBtn" type="button" title="${escapeHtml(
-          t("speak_question")
-        )}">🔊</button>
-        <button class="iconBtn" id="micBtn" type="button" title="${escapeHtml(
-          t("dictate_answer")
-        )}">🎤</button>
+        <div class="qInlineActions" aria-label="Actions audio et dictée">
+          <button class="iconBtn" id="speakBtn" type="button" title="${escapeHtml(
+            t("speak_question")
+          )}">🔊</button>
+          <button class="iconBtn" id="micBtn" type="button" title="${escapeHtml(
+            t("dictate_answer")
+          )}">🎤</button>
+        </div>
       </div>
 
       <div id="qPictoWrap" class="qPictoWrap" style="display:none;"></div>
@@ -192,7 +194,7 @@ function ensureQuizBox() {
   quizBox.speak?.addEventListener("click", () => {
     const q = getCurrentQuestion();
     if (!q) return;
-    speakText(buildSpeechTextForQuestion(q));
+    speakText(buildSpeechTextForQuestion(q), { force: true, remember: true });
   });
 
   quizBox.mic?.addEventListener("click", () => toggleDictation());
@@ -279,6 +281,10 @@ function renderQuestion() {
         ? t("finish")
         : t("next");
     updateProgressUI();
+
+    if (typeof speakCurrentQuestionAuto === "function") {
+      speakCurrentQuestionAuto();
+    }
     return;
   }
 
@@ -330,10 +336,6 @@ function renderQuestion() {
         }
       });
 
-      input.addEventListener("click", () => {
-        window.__speechState.suppressHoverUntil = Date.now() + 500;
-      });
-
       const label = document.createElement("label");
       label.setAttribute("for", id);
       label.className = "choiceLabel";
@@ -371,6 +373,10 @@ function renderQuestion() {
       ? t("finish")
       : t("next");
   updateProgressUI();
+
+  if (typeof speakCurrentQuestionAuto === "function") {
+    speakCurrentQuestionAuto();
+  }
 }
 
 window.shouldShowOtherAnswerField = shouldShowOtherAnswerField;

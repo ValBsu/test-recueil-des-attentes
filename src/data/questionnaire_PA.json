@@ -1,0 +1,197 @@
+{
+  "title": "Recueil des attentes",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "text",
+      "title": "Quel est ton prénom ?",
+      "placeholder": "Tu peux écrire ici…",
+      "required": true
+    },
+    {
+      "id": "q2",
+      "type": "text",
+      "title": "Quel est ton nom ?",
+      "placeholder": "Tu peux écrire ici…",
+      "required": true
+    },
+    {
+      "id": "q3",
+      "type": "text",
+      "title": "Quel âge as-tu ?",
+      "placeholder": "Tu peux écrire ici…",
+      "required": true
+    },
+
+    {
+      "id": "q4",
+      "title": "Comment te sens-tu ?",
+      "type": "single",
+      "pictogram": "comment-ca-va.png",
+      "choices": [
+        { "value": "heureux", "label": "Heureux", "pictogram": "content.png" },
+        { "value": "fatigue", "label": "Fatigué", "pictogram": "fatigue.png" },
+        { "value": "colere", "label": "En colère", "pictogram": "fache.png" },
+        { "value": "triste", "label": "Triste", "pictogram": "triste.png" }
+      ]
+    },
+
+    {
+      "id": "q5",
+      "title": "Quand tu as un problème, que fais-tu ?",
+      "type": "single",
+      "pictogram": "probleme.png",
+      "choices": [
+        { "value": "aide", "label": "Je demande de l’aide", "pictogram": "demander.png" },
+        { "value": "rouspete", "label": "Je rouspète", "pictogram": "rouspete.png" },
+        { "value": "calme", "label": "Je reste calme", "pictogram": "respirer.png" },
+        { "value": "jeter", "label": "Je jette des objets", "pictogram": "casser.png" }
+      ]
+    },
+
+    {
+      "id": "q6",
+      "title": "Est-ce que tu manges bien au self ?",
+      "type": "single",
+      "pictogram": "self.png",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q7",
+      "title": "À la maison, tu manges bien ?",
+      "type": "single",
+      "pictogram": "maison.png",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q8",
+      "title": "Tu dors bien à la maison ?",
+      "type": "single",
+      "pictogram": "dormir.png",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q9",
+      "title": "Est-ce que tu travailles avec Mathilde à l’IME ?",
+      "type": "single",
+      "pictogram": "educateur.png",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q10",
+      "title": "Est-ce que tu travailles avec Camille à l’IME ?",
+      "type": "single",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q11",
+      "title": "Est-ce que tu travailles avec Louise à l’IME ?",
+      "type": "single",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q12",
+      "title": "Est-ce que tu travailles avec Mélanie à l’IME ?",
+      "type": "single",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q13",
+      "title": "Est-ce que tu as des copains à l’IME ?",
+      "type": "single",
+      "pictogram": "amis.png",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q14",
+      "title": "Est-ce que tu fais du sport à l’IME ?",
+      "type": "single",
+      "pictogram": "sport.png",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q15",
+      "title": "Est-ce que tu fais du sport à la maison ?",
+      "type": "single",
+      "pictogram": "maison.png",
+      "choices": [
+        { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
+        { "value": "non", "label": "Non", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q16",
+      "title": "Ton emploi du temps te plaît ?",
+      "type": "single",
+      "pictogram": "semaine.png",
+      "choices": [
+        { "value": "super", "label": "Super", "pictogram": "oui.png" },
+        { "value": "pas bien", "label": "Pas bien", "pictogram": "no.png" },
+        { "value": "nsp", "label": "Je ne sais pas", "pictogram": "je ne sais pas.png" }
+      ]
+    },
+
+    {
+      "id": "q17",
+      "title": "Quelles sont les activités que tu aimes ?",
+      "type": "text",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    },
+
+    {
+      "id": "q18",
+      "title": "Quelles sont les activités que tu n’aimes pas ?",
+      "type": "text",
+      "placeholder": "Tu peux écrire ici…",
+      "required": false
+    }
+  ]
+}
