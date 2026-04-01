@@ -280,7 +280,9 @@ function t(key) {
 let EDUCATORS = [];
 let GROUPS = [];
 
-const EDUCATORS_JSON_PATH = "/.netlify/functions/public-educators";
+/* Local d'abord, Netlify ensuite si dispo */
+const EDUCATORS_LOCAL_JSON_PATH = "./src/data/educators.json";
+const EDUCATORS_FUNCTION_PATH = "/.netlify/functions/public-educators";
 
 function buildGroupsFromEducators(list) {
   return Array.from(
@@ -292,29 +294,48 @@ function buildGroupsFromEducators(list) {
   );
 }
 
+function normalizeEducatorsData(data) {
+  if (!Array.isArray(data)) {
+    throw new Error("La source educators n'est pas un tableau");
+  }
+
+  return data
+    .map((e, index) => ({
+      id: e?.id || normalizeId(e?.name || `educator-${index + 1}`),
+      name: e?.name || "",
+      role: e?.role || "",
+      group: e?.group || "",
+      photo: e?.photo || DEFAULT_EDUC_PHOTO,
+      isActive: e?.isActive !== false,
+      order: Number.isFinite(Number(e?.order)) ? Number(e.order) : index + 1
+    }))
+    .sort((a, b) => a.order - b.order);
+}
+
+async function tryLoadEducatorsFrom(path) {
+  const res = await fetch(path, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Fetch failed: ${path}`);
+  const data = await res.json();
+  return normalizeEducatorsData(data);
+}
+
 async function loadEducators() {
   try {
-    const res = await fetch(EDUCATORS_JSON_PATH, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Fetch failed: ${EDUCATORS_JSON_PATH}`);
-
-    const data = await res.json();
-    if (!Array.isArray(data)) throw new Error("educators.json n'est pas un tableau");
-
-    EDUCATORS = data
-      .map((e, index) => ({
-        id: e?.id || normalizeId(e?.name || `educator-${index + 1}`),
-        name: e?.name || "",
-        role: e?.role || "",
-        group: e?.group || "",
-        photo: e?.photo || DEFAULT_EDUC_PHOTO,
-        isActive: e?.isActive !== false,
-        order: Number.isFinite(Number(e?.order)) ? Number(e.order) : index + 1
-      }))
-      .sort((a, b) => a.order - b.order);
-
+    EDUCATORS = await tryLoadEducatorsFrom(EDUCATORS_LOCAL_JSON_PATH);
     GROUPS = buildGroupsFromEducators(EDUCATORS);
-  } catch (error) {
-    console.error("Erreur chargement educators :", error);
+    console.log("Éducateurs chargés depuis le JSON local.");
+    return;
+  } catch (localError) {
+    console.warn("Lecture locale educators impossible :", localError);
+  }
+
+  try {
+    EDUCATORS = await tryLoadEducatorsFrom(EDUCATORS_FUNCTION_PATH);
+    GROUPS = buildGroupsFromEducators(EDUCATORS);
+    console.log("Éducateurs chargés depuis la function Netlify.");
+    return;
+  } catch (functionError) {
+    console.error("Erreur chargement educators :", functionError);
     EDUCATORS = [];
     GROUPS = [];
   }
