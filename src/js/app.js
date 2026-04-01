@@ -280,7 +280,7 @@ function t(key) {
 let EDUCATORS = [];
 let GROUPS = [];
 
-const EDUCATORS_JSON_PATH = "./src/data/educators.json";
+const EDUCATORS_JSON_PATH = "/.netlify/functions/public-educators";
 
 function buildGroupsFromEducators(list) {
   return Array.from(
@@ -306,7 +306,6 @@ async function loadEducators() {
         name: e?.name || "",
         role: e?.role || "",
         group: e?.group || "",
-        email: e?.email || "",
         photo: e?.photo || DEFAULT_EDUC_PHOTO,
         isActive: e?.isActive !== false,
         order: Number.isFinite(Number(e?.order)) ? Number(e.order) : index + 1
@@ -315,7 +314,7 @@ async function loadEducators() {
 
     GROUPS = buildGroupsFromEducators(EDUCATORS);
   } catch (error) {
-    console.error("Erreur chargement educators.json :", error);
+    console.error("Erreur chargement educators :", error);
     EDUCATORS = [];
     GROUPS = [];
   }
@@ -750,6 +749,7 @@ function renderEducatorsForGroup(group) {
     educGrid.appendChild(card);
   });
 }
+
 function highlightSelectedPoleCard(name) {
   if (!groupGrid) return;
   groupGrid.querySelectorAll(".group-card").forEach((el) => {
@@ -979,34 +979,15 @@ async function init() {
   initModeChoice();
   refreshStaticTexts();
 }
+
 init().catch((error) => {
   console.error("Erreur init app :", error);
 });
-const ADMIN_LOGIN = "ValBsu";      // ← change
-const ADMIN_PASSWORD = "admin123"; // ← change
 
 const adminBtn = document.getElementById("adminAccessBtn");
 
 if (adminBtn) {
   adminBtn.addEventListener("click", () => {
-    const isAuth = sessionStorage.getItem("adminAuth");
-
-    if (isAuth === "true") {
-      window.location.href = "./admin.html";
-      return;
-    }
-
-    const login = prompt("Identifiant admin :");
-    if (!login) return;
-
-    const password = prompt("Mot de passe :");
-    if (!password) return;
-
-    if (login === ADMIN_LOGIN && password === ADMIN_PASSWORD) {
-      sessionStorage.setItem("adminAuth", "true");
-      window.location.href = "./admin.html";
-    } else {
-      alert("Identifiant ou mot de passe incorrect");
-    }
+    window.location.href = "./admin.html";
   });
 }

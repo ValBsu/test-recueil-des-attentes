@@ -1,7 +1,4 @@
-if (sessionStorage.getItem("adminAuth") !== "true") {
-  alert("Accès refusé");
-  window.location.href = "./index.html";
-}
+"use strict";
 
 const listEl = document.getElementById("list");
 const addBtn = document.getElementById("addBtn");
@@ -9,11 +6,82 @@ const addBtn = document.getElementById("addBtn");
 let educators = [];
 
 /* =========================
+   Auth admin
+   ========================= */
+async function ensureAdminAuthenticated() {
+  try {
+    const checkRes = await fetch("/.netlify/functions/admin-check", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store"
+    });
+
+    if (checkRes.ok) {
+      const data = await checkRes.json();
+      if (data?.authenticated === true) return true;
+    }
+  } catch (err) {
+    console.error("Erreur admin-check :", err);
+  }
+
+  const login = window.prompt("Identifiant admin :");
+  if (!login) {
+    window.location.href = "./index.html";
+    return false;
+  }
+
+  const password = window.prompt("Mot de passe :");
+  if (!password) {
+    window.location.href = "./index.html";
+    return false;
+  }
+
+  try {
+    const loginRes = await fetch("/.netlify/functions/admin-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ login, password })
+    });
+
+    if (!loginRes.ok) {
+      alert("Identifiant ou mot de passe incorrect");
+      window.location.href = "./index.html";
+      return false;
+    }
+
+    const data = await loginRes.json();
+    if (data?.ok !== true) {
+      alert("Connexion admin refusée");
+      window.location.href = "./index.html";
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error("Erreur admin-login :", err);
+    alert("Erreur de connexion admin");
+    window.location.href = "./index.html";
+    return false;
+  }
+}
+
+/* =========================
    Load
    ========================= */
 async function loadEducators() {
   try {
-    const res = await fetch("./src/data/educators.json", { cache: "no-store" });
+    const res = await fetch("/.netlify/functions/admin-get-educators", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store"
+    });
+
+    if (res.status === 401) {
+      alert("Session admin expirée");
+      window.location.href = "./index.html";
+      return;
+    }
 
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
@@ -115,8 +183,8 @@ function render() {
         }
       });
 
-      console.log("Modifié :", e);
-      alert("Modification enregistrée (temporaire)");
+      console.log("Modification locale :", e);
+      alert("Sécurité admin OK ✅\nLa sauvegarde réelle sera branchée à l’étape suivante.");
     });
 
     deleteBtn.addEventListener("click", () => {
@@ -165,4 +233,8 @@ function escapeHtml(value) {
 /* =========================
    Init
    ========================= */
-loadEducators();
+(async function initAdmin() {
+  const ok = await ensureAdminAuthenticated();
+  if (!ok) return;
+  await loadEducators();
+})();
