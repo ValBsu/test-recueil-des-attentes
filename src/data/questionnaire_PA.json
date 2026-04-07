@@ -23,17 +23,15 @@
       "required": true
     },
 
-    {
+     {
       "id": "q4",
       "title": "Comment te sens-tu ?",
-      "type": "single",
-      "pictogram": "comment-ca-va.png",
-      "choices": [
-        { "value": "heureux", "label": "Heureux", "pictogram": "content.png" },
-        { "value": "fatigue", "label": "Fatigué", "pictogram": "fatigue.png" },
-        { "value": "colere", "label": "En colère", "pictogram": "fache.png" },
-        { "value": "triste", "label": "Triste", "pictogram": "triste.png" }
-      ]
+      "type": "scale",
+      "min": 0,
+      "max": 100,
+      "default": 50,
+      "labels": ["Heureux", "Fatigué", "Colère", "Triste"],
+      "pictogram": "comment-ca-va.png"
     },
 
     {
