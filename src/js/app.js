@@ -394,7 +394,7 @@ const QUESTIONNAIRES = [
     label: { fr: t("q_ulis_label"), en: UI.en.q_ulis_label, ar: UI.ar.q_ulis_label },
     hint: { fr: t("q_ulis_hint"), en: UI.en.q_ulis_hint, ar: UI.ar.q_ulis_hint },
     icon: "🚌",
-    path: "./src/data/questionnaire_ULIS.json",
+    path: "./src/data/questionnaire_Ulis.json",
     fixedPole: "Ulis"
   },
   {
@@ -629,13 +629,6 @@ function renderModeOverlayContent() {
   grid.querySelectorAll(".qSelectCard").forEach((btn) => {
     const item = QUESTIONNAIRES.find((x) => x.key === btn.dataset.qkey);
     if (!item) return;
-
-    btn.addEventListener("mouseenter", () =>
-      speakHover(getQuestionnaireMetaText(item, "label"))
-    );
-    btn.addEventListener("focus", () =>
-      speakHover(getQuestionnaireMetaText(item, "label"))
-    );
     btn.addEventListener("click", () => onPickQuestionnaire(item));
   });
 }
@@ -744,15 +737,6 @@ function renderEducatorsForGroup(group) {
       </div>
     `;
 
-    const speakLabel = `${e.name}. ${e.role}.`;
-    card.addEventListener("mouseenter", () => speakHover(speakLabel));
-    card.addEventListener("focus", () => speakHover(speakLabel));
-    card.addEventListener(
-      "touchstart",
-      () => speakText(speakLabel),
-      { passive: true }
-    );
-
     card.addEventListener("click", () => {
       const id = e.id || normalizeId(e.name);
       ensureSelectOption(id, e.name);
@@ -813,9 +797,6 @@ function renderGroupCards(enabled) {
       <div class="group-badge" aria-hidden="true">${icon}</div>
       <div class="group-name">${escapeHtml(g)}</div>
     `;
-
-    card.addEventListener("mouseenter", () => enabled && isAllowed && speakHover(g));
-    card.addEventListener("focus", () => enabled && isAllowed && speakHover(g));
 
     card.addEventListener("click", () => {
       if (!enabled || !isAllowed) return;
