@@ -4,22 +4,30 @@ export async function handler(event) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: "Method Not Allowed"
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
+      body: JSON.stringify({ ok: false, error: "Method Not Allowed" })
     };
   }
 
   try {
     const body = JSON.parse(event.body || "{}");
-    const login = String(body.login || "");
+    const login = String(body.login || "").trim();
     const password = String(body.password || "");
 
-    const expectedLogin = process.env.ADMIN_LOGIN || "ValBsu";
-    const expectedPassword = process.env.ADMIN_PASSWORD || "admin123";
+    const expectedLogin = String(process.env.ADMIN_LOGIN || "").trim();
+    const expectedPassword = String(process.env.ADMIN_PASSWORD || "");
 
     if (!expectedLogin || !expectedPassword) {
       return {
         statusCode: 500,
-        body: "Admin credentials are not configured"
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store"
+        },
+        body: JSON.stringify({ ok: false, error: "Admin credentials are not configured" })
       };
     }
 
@@ -33,7 +41,7 @@ export async function handler(event) {
           "Content-Type": "application/json",
           "Cache-Control": "no-store"
         },
-        body: JSON.stringify({ ok: false })
+        body: JSON.stringify({ ok: false, error: "Identifiant ou mot de passe incorrect" })
       };
     }
 
@@ -54,7 +62,7 @@ export async function handler(event) {
         "Content-Type": "application/json",
         "Cache-Control": "no-store"
       },
-      body: JSON.stringify({ ok: false })
+      body: JSON.stringify({ ok: false, error: "Erreur serveur admin-login" })
     };
   }
 }
