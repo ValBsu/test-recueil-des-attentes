@@ -83,7 +83,8 @@
       "type": "single",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "bien.png" },
-        { "value": "non", "label": "Non", "pictogram": "non.png" }
+        { "value": "non", "label": "Non", "pictogram": "non.png" },
+        { "value": "je ne sais pas", "label": "Je ne sais pas", "pictogram": "jenesaispas.png" }
       ],
       "pictogram": "psychomotricite.png"
     },

@@ -1,0 +1,318 @@
+{
+  "title": {
+    "fr": "Questionnaire AJ - Hébergement"
+  },
+  "questions": [
+
+
+    {
+      "id": "nom",
+      "type": "text",
+      "title": { "fr": "Nom" },
+      "required": true
+    },
+    {
+      "id": "prenom",
+      "type": "text",
+      "title": { "fr": "Prénom" },
+      "required": true
+    },
+    {
+      "id": "age",
+      "type": "text",
+      "title": { "fr": "Âge" },
+      "required": true
+    },
+    {
+      "id": "accompagnement",
+      "type": "single",
+      "title": { "fr": "Questionnaire complété :" },
+      "choices": [
+        { "value": "seul", "label": { "fr": "Seul.e" } },
+        { "value": "aide", "label": { "fr": "Avec aide" } }
+      ]
+    },
+
+
+
+    {
+      "id": "sante_vie",
+      "type": "scale",
+      "title": { "fr": "Dans ma vie, je me sens :" },
+      "min": 1,
+      "max": 100
+    },
+    {
+      "id": "sante_dime",
+      "type": "scale",
+      "title": { "fr": "Au DIME, je me sens :" },
+      "min": 1,
+      "max": 100
+    },
+    {
+      "id": "sante_pole",
+      "type": "scale",
+      "title": { "fr": "Sur le pôle, je me sens :" },
+      "min": 1,
+      "max": 100
+    },
+    {
+      "id": "suivi",
+      "type": "multiple",
+      "title": { "fr": "Souhaites-tu un suivi avec ?" },
+      "choices": [
+        { "value": "psy", "label": { "fr": "Psychologue" } },
+        { "value": "psychomot", "label": { "fr": "Psychomotricité" } },
+        { "value": "ortho", "label": { "fr": "Orthophonie" } },
+        { "value": "medical", "label": { "fr": "Médical" } }
+      ]
+    },
+    {
+      "id": "suivi_lieu",
+      "type": "single",
+      "title": { "fr": "Où ?" },
+      "choices": [
+        { "value": "dime", "label": { "fr": "Au DIME" } },
+        { "value": "exterieur", "label": { "fr": "À l’extérieur" } }
+      ]
+    },
+
+
+
+    {
+      "id": "relation_autres",
+      "type": "scale",
+      "title": { "fr": "Comment te sens-tu avec les autres ?" },
+      "min": 1,
+      "max": 100
+    },
+
+    {
+      "id": "difficulte_autres",
+      "type": "single",
+      "title": { "fr": "As-tu des difficultés avec les autres ?" },
+      "choices": [
+        { "value": "oui", "label": { "fr": "Oui" } },
+        { "value": "non", "label": { "fr": "Non" } },
+        { "value": "nspp", "label": { "fr": "Je ne sais pas" } }
+      ]
+    },
+
+    {
+      "id": "activites_dime",
+      "type": "multiple",
+      "title": { "fr": "Activités que tu aimerais au DIME" },
+      "choices": [
+        { "value": "musique", "label": { "fr": "Musique" } },
+        { "value": "lecture", "label": { "fr": "Lecture" } },
+        { "value": "bienetre", "label": { "fr": "Bien-être" } },
+        { "value": "multisport", "label": { "fr": "Multisport" } },
+        { "value": "autre", "label": { "fr": "Autre" } },
+        { "value": "rien", "label": { "fr": "Rien" } }
+      ]
+    },
+
+    {
+      "id": "club",
+      "type": "single",
+      "title": { "fr": "Souhaites-tu faire partie d’un club ?" },
+      "choices": [
+        { "value": "oui", "label": { "fr": "Oui" } },
+        { "value": "non", "label": { "fr": "Non" } }
+      ]
+    },
+
+    {
+      "id": "aide_club",
+      "type": "single",
+      "title": { "fr": "Souhaites-tu être aidé pour trouver un club ?" },
+      "choices": [
+        { "value": "oui", "label": { "fr": "Oui" } },
+        { "value": "non", "label": { "fr": "Non" } }
+      ]
+    },
+
+    {
+      "id": "sorties",
+      "type": "multiple",
+      "title": { "fr": "Sorties souhaitées" },
+      "choices": [
+        { "value": "seul", "label": { "fr": "Seul.e" } },
+        { "value": "famille", "label": { "fr": "En famille" } },
+        { "value": "amis", "label": { "fr": "Avec des amis" } }
+      ]
+    },
+
+
+
+    {
+      "id": "transport",
+      "type": "multiple",
+      "title": { "fr": "Moyen de transport souhaité" },
+      "choices": [
+        { "value": "bus", "label": { "fr": "Bus" } },
+        { "value": "voiture", "label": { "fr": "Voiture" } },
+        { "value": "velo", "label": { "fr": "Vélo" } },
+        { "value": "trottinette", "label": { "fr": "Trottinette" } },
+        { "value": "scooter", "label": { "fr": "Scooter" } },
+        { "value": "taxi", "label": { "fr": "Taxi" } },
+        { "value": "pied", "label": { "fr": "À pied" } },
+        { "value": "train", "label": { "fr": "Train" } }
+      ]
+    },
+
+    {
+      "id": "manger_exterieur",
+      "type": "single",
+      "title": { "fr": "Souhaites-tu manger à l’extérieur ?" },
+      "choices": [
+        { "value": "oui", "label": { "fr": "Oui" } },
+        { "value": "non", "label": { "fr": "Non" } }
+      ]
+    },
+
+    {
+      "id": "apprendre_nager",
+      "type": "single",
+      "title": { "fr": "Souhaites-tu apprendre à nager ?" },
+      "choices": [
+        { "value": "oui", "label": { "fr": "Oui" } },
+        { "value": "non", "label": { "fr": "Non" } }
+      ]
+    },
+
+    {
+      "id": "apprendre_velo",
+      "type": "single",
+      "title": { "fr": "Souhaites-tu apprendre le vélo ?" },
+      "choices": [
+        { "value": "oui", "label": { "fr": "Oui" } },
+        { "value": "non", "label": { "fr": "Non" } }
+      ]
+    },
+
+    {
+      "id": "apprendre_bus",
+      "type": "single",
+      "title": { "fr": "Souhaites-tu apprendre à prendre le bus ?" },
+      "choices": [
+        { "value": "oui", "label": { "fr": "Oui" } },
+        { "value": "non", "label": { "fr": "Non" } }
+      ]
+    },
+
+
+    {
+      "id": "emploi_temps",
+      "type": "scale",
+      "title": { "fr": "Mon emploi du temps, je le trouve :" },
+      "min": 1,
+      "max": 100
+    },
+
+    {
+      "id": "activites_pref",
+      "type": "text",
+      "title": { "fr": "Activités préférées" }
+    },
+
+    {
+      "id": "activites_moins",
+      "type": "text",
+      "title": { "fr": "Activités que tu aimes le moins" }
+    },
+
+    {
+      "id": "nouvelle_activite",
+      "type": "text",
+      "title": { "fr": "Autre activité souhaitée" }
+    },
+
+
+
+    {
+      "id": "logement",
+      "type": "single",
+      "title": { "fr": "Dans l’avenir, où souhaites-tu vivre ?" },
+      "choices": [
+        { "value": "parents", "label": { "fr": "Avec mes parents" } },
+        { "value": "collectif", "label": { "fr": "Hébergement collectif" } },
+        { "value": "seul", "label": { "fr": "Dans mon logement" } }
+      ]
+    },
+
+    {
+      "id": "aide_logement",
+      "type": "single",
+      "title": { "fr": "Avec aide ?" },
+      "choices": [
+        { "value": "avec", "label": { "fr": "Avec aide" } },
+        { "value": "sans", "label": { "fr": "Sans aide" } }
+      ]
+    },
+
+    {
+      "id": "travail",
+      "type": "single",
+      "title": { "fr": "Souhaites-tu travailler ?" },
+      "choices": [
+        { "value": "oui", "label": { "fr": "Oui" } },
+        { "value": "non", "label": { "fr": "Non" } },
+        { "value": "nspp", "label": { "fr": "Je ne sais pas" } }
+      ]
+    },
+
+    {
+      "id": "type_travail",
+      "type": "single",
+      "title": { "fr": "Type de travail" },
+      "choices": [
+        { "value": "plein", "label": { "fr": "Temps plein" } },
+        { "value": "partiel", "label": { "fr": "Temps partiel" } },
+        { "value": "nspp", "label": { "fr": "Je ne sais pas" } }
+      ]
+    },
+
+    {
+      "id": "metier",
+      "type": "text",
+      "title": { "fr": "Quel métier voudrais-tu faire ?" }
+    },
+
+    {
+      "id": "structure_travail",
+      "type": "multiple",
+      "title": { "fr": "Lieu de travail souhaité" },
+      "choices": [
+        { "value": "esat", "label": { "fr": "ESAT" } },
+        { "value": "ea", "label": { "fr": "Entreprise adaptée" } },
+        { "value": "autre", "label": { "fr": "Autre" } }
+      ]
+    },
+
+
+    {
+      "id": "accompagnement_domaines",
+      "type": "multiple",
+      "title": { "fr": "Domaines où tu souhaites être accompagné" },
+      "choices": [
+        { "value": "hygiene", "label": { "fr": "Hygiène" } },
+        { "value": "alimentation", "label": { "fr": "Alimentation" } },
+        { "value": "menage", "label": { "fr": "Ménage" } },
+        { "value": "deplacements", "label": { "fr": "Déplacements" } },
+        { "value": "argent", "label": { "fr": "Argent" } },
+        { "value": "classe", "label": { "fr": "Lecture / écriture / calcul" } },
+        { "value": "relations", "label": { "fr": "Relations" } },
+        { "value": "comportement", "label": { "fr": "Comportement" } },
+        { "value": "regles", "label": { "fr": "Règles et contraintes" } }
+      ]
+    },
+
+    {
+      "id": "autre_idee",
+      "type": "text",
+      "title": { "fr": "Autre idée ou projet" }
+    }
+
+  ]
+}

@@ -25,7 +25,7 @@
 
      {
       "id": "q4",
-      "title": "Comment te sens-tu ?",
+      "title": "Comment je me sens ?",
       "type": "scale",
       "min": 0,
       "max": 100,
@@ -36,7 +36,7 @@
 
     {
       "id": "q5",
-      "title": "Quand tu as un problème, que fais-tu ?",
+      "title": "Quand tu as un problème",
       "type": "single",
       "pictogram": "probleme.png",
       "choices": [
@@ -49,7 +49,7 @@
 
     {
       "id": "q6",
-      "title": "Est-ce que tu manges bien au self ?",
+      "title": "Je mange bien au self ?",
       "type": "single",
       "pictogram": "self.png",
       "choices": [
@@ -61,7 +61,7 @@
 
     {
       "id": "q7",
-      "title": "À la maison, tu manges bien ?",
+      "title": "Je mange bien à la maison ?",
       "type": "single",
       "pictogram": "maison.png",
       "choices": [
@@ -73,7 +73,7 @@
 
     {
       "id": "q8",
-      "title": "Tu dors bien à la maison ?",
+      "title": "Je dors bien à la maison ?",
       "type": "single",
       "pictogram": "dormir.png",
       "choices": [
@@ -85,7 +85,7 @@
 
     {
       "id": "q9",
-      "title": "Est-ce que tu travailles avec Mathilde à l’IME ?",
+      "title": "Je travaille avec Mathilde à l’IME ?",
       "type": "single",
       "pictogram": "educateur.png",
       "choices": [
@@ -97,7 +97,7 @@
 
     {
       "id": "q10",
-      "title": "Est-ce que tu travailles avec Camille à l’IME ?",
+      "title": "Je travaille avec Camille à l’IME ?",
       "type": "single",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
@@ -108,7 +108,7 @@
 
     {
       "id": "q11",
-      "title": "Est-ce que tu travailles avec Louise à l’IME ?",
+      "title": "Je travaille avec Louise à l’IME ?",
       "type": "single",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
@@ -119,7 +119,7 @@
 
     {
       "id": "q12",
-      "title": "Est-ce que tu travailles avec Mélanie à l’IME ?",
+      "title": "Je travaille avec Mélanie à l’IME ?",
       "type": "single",
       "choices": [
         { "value": "oui", "label": "Oui", "pictogram": "oui.png" },
@@ -130,7 +130,7 @@
 
     {
       "id": "q13",
-      "title": "Est-ce que tu as des copains à l’IME ?",
+      "title": "J'ai des copains à l’IME ?",
       "type": "single",
       "pictogram": "amis.png",
       "choices": [
@@ -142,7 +142,7 @@
 
     {
       "id": "q14",
-      "title": "Est-ce que tu fais du sport à l’IME ?",
+      "title": "Je fais du sport à l’IME ?",
       "type": "single",
       "pictogram": "sport.png",
       "choices": [
@@ -154,7 +154,7 @@
 
     {
       "id": "q15",
-      "title": "Est-ce que tu fais du sport à la maison ?",
+      "title": "Je fais du sport à la maison ?",
       "type": "single",
       "pictogram": "maison.png",
       "choices": [
@@ -166,7 +166,7 @@
 
     {
       "id": "q16",
-      "title": "Ton emploi du temps te plaît ?",
+      "title": "Mon emploi du temps je le trouve?",
       "type": "single",
       "pictogram": "semaine.png",
       "choices": [
